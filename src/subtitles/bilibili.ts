@@ -4,6 +4,12 @@
  * Ported from BibiGPT-v1 `lib/bilibili/fetchBilibiliSubtitle.ts` and
  * `lib/bilibili/fetchBilibiliSubtitleUrls.ts`. Uses Bilibili's own web APIs;
  * a logged-in SESSDATA cookie is required to read the caption list.
+ *
+ * Deviation from upstream (documented in README): Bilibili's `x/player/v2`
+ * intermittently returns a degraded subtitle list whose `ai-zh` URL points to
+ * an unrelated video's caption file. This port therefore validates each
+ * downloaded caption file against the video duration and retries a few times
+ * before accepting, instead of trusting the first response.
  */
 import { find, sample } from '../utils/fp'
 import { reduceBilibiliSubtitleTimestamp, type BilibiliSubtitleItem } from './reduce-subtitle-timestamp'
@@ -14,55 +20,77 @@ interface BilibiliSubtitleMeta {
   subtitle_url: string
 }
 
-interface BilibiliVideoInfo {
+interface BilibiliPage {
+  page: number
+  cid: number
+  duration?: number
+}
+
+interface BilibiliViewInfo {
   title?: string
   desc?: string
   dynamic?: string
-  pages?: Array<{ page: number; cid: number }>
   aid?: number
-  subtitle?: { list: BilibiliSubtitleMeta[] }
+  duration?: number
+  pages?: BilibiliPage[]
 }
 
-async function fetchBilibiliSubtitleUrls(
-  videoId: string,
-  pageNumber: string | number | null | undefined,
-  ctx: SubtitleFetchContext,
-): Promise<BilibiliVideoInfo> {
+interface BilibiliSubtitleFile {
+  body?: BilibiliSubtitleItem[]
+}
+
+/** How many times to re-fetch the caption list when a file looks wrong. */
+export const MAX_SUBTITLE_ATTEMPTS = 8
+
+function bilibiliHeaders(ctx: SubtitleFetchContext, videoId: string): Record<string, string> {
   const sessdata = sample(ctx.config.bilibiliSessionTokens)
-  const headers: Record<string, string> = {
+  return {
     Accept: 'application/json',
     'Content-Type': 'application/json',
     'User-Agent': ctx.config.userAgent,
     Host: 'api.bilibili.com',
     Cookie: `SESSDATA=${sessdata ?? ''}`,
+    Referer: `https://www.bilibili.com/video/${videoId}/`,
   }
-  const commonConfig: RequestInit = {
+}
+
+function commonConfig(headers: Record<string, string>): RequestInit {
+  return {
     method: 'GET',
     cache: 'no-cache',
     headers,
     referrerPolicy: 'no-referrer',
   }
+}
 
+async function fetchViewInfo(videoId: string, ctx: SubtitleFetchContext): Promise<BilibiliViewInfo> {
   const params = videoId.startsWith('av') ? `?aid=${videoId.slice(2)}` : `?bvid=${videoId}`
   const requestUrl = `https://api.bilibili.com/x/web-interface/view${params}`
   ctx.logger.debug('fetch', requestUrl)
-  const response = await ctx.fetch(requestUrl, commonConfig)
-  const json = (await response.json()) as { data?: BilibiliVideoInfo }
-  const data = json?.data
+  const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)))
+  const json = (await response.json()) as { data?: BilibiliViewInfo }
+  return json?.data ?? {}
+}
 
-  // Support multi-part videos.
-  if (pageNumber || (data?.pages?.length ?? 0) > 0) {
-    const { aid, pages } = data ?? {}
-    const matched = find(pages ?? [], { page: Number(pageNumber || 1) })
-    const cid = matched?.cid
+async function fetchSubtitleList(
+  aid: number | undefined,
+  cid: number | undefined,
+  videoId: string,
+  ctx: SubtitleFetchContext,
+): Promise<BilibiliSubtitleMeta[]> {
+  const requestUrl = `https://api.bilibili.com/x/player/v2?aid=${aid}&cid=${cid}`
+  ctx.logger.debug('fetch', requestUrl)
+  const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)))
+  const json = (await response.json()) as { data?: { subtitle?: { subtitles?: BilibiliSubtitleMeta[] } } }
+  return json?.data?.subtitle?.subtitles ?? []
+}
 
-    const pageUrl = `https://api.bilibili.com/x/player/v2?aid=${aid}&cid=${cid}`
-    const res = await ctx.fetch(pageUrl, commonConfig)
-    const pageJson = (await res.json()) as { data?: { subtitle?: { subtitles: BilibiliSubtitleMeta[] } } }
-    return { ...data, subtitle: { list: pageJson.data?.subtitle?.subtitles ?? [] } }
-  }
+function pickSubtitle(list: BilibiliSubtitleMeta[]): BilibiliSubtitleMeta | undefined {
+  return list.find(({ lan }) => lan === 'zh-CN') || list[0]
+}
 
-  return data ?? {}
+function normalizeSubtitleUrl(url: string | undefined): string | undefined {
+  return url?.startsWith('//') ? `https:${url}` : url
 }
 
 export async function fetchBilibiliTranscript(
@@ -71,26 +99,74 @@ export async function fetchBilibiliTranscript(
   shouldShowTimestamp: boolean | undefined,
   ctx: SubtitleFetchContext,
 ): Promise<SubtitleFetchResult> {
-  const res = await fetchBilibiliSubtitleUrls(videoId, pageNumber, ctx)
-  const { title = '', desc, dynamic, subtitle } = res || {}
-  const hasDescription = desc || dynamic
-  const descriptionText = hasDescription ? `${desc} ${dynamic}` : undefined
-  const subtitleList = subtitle?.list
-  if (!subtitleList || subtitleList.length < 1) {
+  const data = await fetchViewInfo(videoId, ctx)
+  const { title = '', desc, dynamic, aid, pages } = data
+  const descriptionText = desc || dynamic ? `${desc ?? ''} ${dynamic ?? ''}`.trim() : undefined
+
+  // Videos without pages keep the original behavior: no caption list to fetch.
+  const hasPages = (pages?.length ?? 0) > 0
+  if (!hasPages && !pageNumber) {
     return { title, subtitlesArray: null, descriptionText }
   }
 
-  const betterSubtitle = subtitleList.find(({ lan }) => lan === 'zh-CN') || subtitleList[0]
-  const rawUrl = betterSubtitle?.subtitle_url
-  const subtitleUrl = rawUrl?.startsWith('//') ? `https:${rawUrl}` : rawUrl
-  ctx.logger.debug('subtitle_url', subtitleUrl)
-
-  if (!subtitleUrl) {
+  const matchedPage = hasPages ? find(pages ?? [], { page: Number(pageNumber || 1) }) : undefined
+  const cid = matchedPage?.cid ?? pages?.[0]?.cid
+  if (!aid || !cid) {
     return { title, subtitlesArray: null, descriptionText }
   }
+  const duration = matchedPage?.duration ?? data.duration
 
-  const subtitleResponse = await ctx.fetch(subtitleUrl)
-  const subtitles = (await subtitleResponse.json()) as { body?: BilibiliSubtitleItem[] }
-  const transcripts = reduceBilibiliSubtitleTimestamp(subtitles?.body, shouldShowTimestamp)
-  return { title, subtitlesArray: transcripts, descriptionText }
+  for (let attempt = 1; attempt <= MAX_SUBTITLE_ATTEMPTS; attempt++) {
+    const subtitleList = await fetchSubtitleList(aid, cid, videoId, ctx)
+    if (!subtitleList || subtitleList.length < 1) {
+      ctx.logger.debug(`empty subtitle list for ${videoId} (attempt ${attempt})`)
+      continue
+    }
+
+    const betterSubtitle = pickSubtitle(subtitleList)
+    const subtitleUrl = normalizeSubtitleUrl(betterSubtitle?.subtitle_url)
+    ctx.logger.debug('subtitle_url', subtitleUrl)
+    if (!subtitleUrl) {
+      continue
+    }
+
+    let body: BilibiliSubtitleItem[] | undefined
+    try {
+      const subtitleResponse = await ctx.fetch(subtitleUrl, {
+        headers: {
+          'User-Agent': ctx.config.userAgent,
+          Referer: `https://www.bilibili.com/video/${videoId}/`,
+        },
+      })
+      const subtitles = (await subtitleResponse.json()) as BilibiliSubtitleFile
+      body = subtitles?.body
+    } catch (error) {
+      ctx.logger.warn('subtitle download failed', error)
+      continue
+    }
+    if (!body || body.length === 0) {
+      continue
+    }
+
+    const lastFrom = Number(body[body.length - 1]?.from ?? 0)
+    const tolerance = Math.max(15, (duration ?? 0) * 0.03)
+    const matchesDuration = duration == null || Math.abs(lastFrom - duration) <= tolerance
+    const subtitlesArray = reduceBilibiliSubtitleTimestamp(body, shouldShowTimestamp)
+
+    if (matchesDuration) {
+      return { title, subtitlesArray, descriptionText }
+    }
+
+    ctx.logger.warn(
+      `bilibili subtitle for ${videoId} looks wrong (ends at ${lastFrom}s, video is ${duration}s); ` +
+        `retry ${attempt}/${MAX_SUBTITLE_ATTEMPTS}`,
+    )
+  }
+
+  // Never fall back to an unvalidated subtitle file: when the duration is
+  // known and nothing matched, a mismatched file belongs to another video and
+  // would silently produce a summary of the wrong content. Degrade to the
+  // description instead.
+  ctx.logger.warn(`no duration-matched subtitle for ${videoId} after ${MAX_SUBTITLE_ATTEMPTS} attempts`)
+  return { title, subtitlesArray: null, descriptionText }
 }

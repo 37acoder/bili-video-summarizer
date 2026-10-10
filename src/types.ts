@@ -52,6 +52,12 @@ export interface SummarizeOptions {
 export interface SummarizeInput {
   video: VideoRequest
   options?: SummarizeOptions
+  /**
+   * Pre-fetched transcript (from `fetchTranscript`). When provided, caption
+   * extraction is skipped — useful to avoid extracting twice, or to inspect
+   * and reuse the transcript.
+   */
+  transcript?: TranscriptResult
 }
 
 /** One reduced subtitle line (a group of original caption lines). */

@@ -133,6 +133,14 @@ Falls back to these when not passed in code — see `.env.example`.
 - **Env access is lazy and browser-safe**, and config is passed explicitly.
 - The upstream `showTimestamp` (video config) / `shouldShowTimestamp` (user
   config) duplication is unified into a single `options.showTimestamp`.
+- **Bilibili subtitle validation + retry.** `x/player/v2` intermittently
+  returns a degraded caption list whose `ai-zh` URL points to an unrelated
+  video's caption file. The module now checks the downloaded file's last
+  timestamp against the video duration and retries up to 8 times. When nothing
+  matches, it degrades to the video description — it never summarizes a
+  mismatched (wrong-video) caption file (upstream trusted the first response).
+- `SummarizeInput.transcript` lets callers pass a pre-fetched transcript so
+  captions are only extracted once per request.
 - `formatSummary` (a UI-only bullet/timestamp renderer) is intentionally not
   ported.
 

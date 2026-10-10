@@ -125,7 +125,7 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       throw new SummarizeError(500, 'NO_VIDEO_ID', 'No videoId in the request')
     }
 
-    const transcript = await fetchTranscriptFor(input)
+    const transcript = input.transcript ?? (await fetchTranscriptFor(input))
     if (
       (!transcript.subtitlesArray || transcript.subtitlesArray.length === 0) &&
       transcript.usedDescription &&

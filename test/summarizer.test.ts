@@ -140,4 +140,67 @@ describe('createVideoSummarizer', () => {
     expect(transcript.transcriptText).toContain('你好')
     expect(transcript.transcriptText).toContain('世界')
   })
+
+  it('retries when the Bilibili subtitle file does not match the video duration', async () => {
+    const llm = fakeLlm()
+    let playerCall = 0
+    const routes: Route[] = [
+      {
+        match: (url) => url.includes('/x/web-interface/view'),
+        handler: () =>
+          jsonResponse({
+            data: { title: 'Bili', desc: 'desc', aid: 1, duration: 10, pages: [{ page: 1, cid: 2, duration: 10 }] },
+          }),
+      },
+      {
+        match: (url) => url.includes('/x/player/v2'),
+        handler: () => {
+          playerCall += 1
+          const subtitleUrl = playerCall === 1 ? '//x/bad.json' : '//x/good.json'
+          return jsonResponse({ data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: subtitleUrl }] } } })
+        },
+      },
+      {
+        match: (url) => url.includes('x/bad.json'),
+        handler: () => jsonResponse({ body: [{ from: 0, content: '别的视频内容' }, { from: 999, content: '尾声' }] }),
+      },
+      {
+        match: (url) => url.includes('x/good.json'),
+        handler: () => jsonResponse({ body: [{ from: 0, content: '你好' }, { from: 9, content: '世界' }] }),
+      },
+    ]
+    const summarizer = createVideoSummarizer({ llmClient: llm, fetch: makeFetch(routes) })
+
+    const transcript = await summarizer.fetchTranscript({ video: { source: 'bilibili', videoId: 'BV1xx' } })
+    expect(transcript.usedDescription).toBe(false)
+    expect(transcript.transcriptText).toContain('你好')
+    expect(transcript.transcriptText).not.toContain('别的视频内容')
+  })
+
+  it('degrades to the description when every subtitle file mismatches the video duration', async () => {
+    const llm = fakeLlm()
+    const routes: Route[] = [
+      {
+        match: (url) => url.includes('/x/web-interface/view'),
+        handler: () =>
+          jsonResponse({
+            data: { title: 'Bili', desc: 'the description', aid: 1, duration: 10, pages: [{ page: 1, cid: 2, duration: 10 }] },
+          }),
+      },
+      {
+        match: (url) => url.includes('/x/player/v2'),
+        handler: () => jsonResponse({ data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: '//x/bad.json' }] } } }),
+      },
+      {
+        match: (url) => url.includes('x/bad.json'),
+        handler: () => jsonResponse({ body: [{ from: 0, content: '别的视频内容' }, { from: 999, content: '尾声' }] }),
+      },
+    ]
+    const summarizer = createVideoSummarizer({ llmClient: llm, fetch: makeFetch(routes) })
+
+    const transcript = await summarizer.fetchTranscript({ video: { source: 'bilibili', videoId: 'BV1xx' } })
+    expect(transcript.usedDescription).toBe(true)
+    expect(transcript.transcriptText).toBe('the description')
+    expect(transcript.transcriptText).not.toContain('别的视频内容')
+  })
 })
