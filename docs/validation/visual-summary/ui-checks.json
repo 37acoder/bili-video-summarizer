@@ -1,0 +1,68 @@
+{
+  "desktop": {
+    "viewport": 1440,
+    "horizontalOverflow": false,
+    "images": [
+      {
+        "src": "assets/eyes-and-hands.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/permission-boundary.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/revoke-access.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/closed-loop.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/drawing-start.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/drawing-pipeline.jpg",
+        "loaded": true
+      }
+    ],
+    "anchorTargets": true
+  },
+  "mobile": {
+    "viewport": 390,
+    "horizontalOverflow": false,
+    "images": [
+      {
+        "src": "assets/eyes-and-hands.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/permission-boundary.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/revoke-access.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/closed-loop.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/drawing-start.jpg",
+        "loaded": true
+      },
+      {
+        "src": "assets/drawing-pipeline.jpg",
+        "loaded": true
+      }
+    ],
+    "anchorTargets": true
+  },
+  "evidenceToggle": true,
+  "printEvidenceVisible": true,
+  "markdownHasAllFrames": true,
+  "imageCount": 6
+}

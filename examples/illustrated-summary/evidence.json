@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "date": "2026-10-10",
+  "source": {
+    "id": "BV1KLhi6oEh5",
+    "title": "喂饭，让你的安卓手机或平板比Siri更Siri",
+    "duration": 675.8,
+    "width": 852,
+    "height": 480,
+    "ext": "mp4",
+    "webpage_url": "https://www.bilibili.com/video/BV1KLhi6oEh5/",
+    "downloadSeconds": 6.624,
+    "actualMediaDurationSec": 675.783688,
+    "mediaSha256": "a59c7f2072a531e3020d0eda9a59138881d2726b3607aec0d411919b329bbb0d"
+  },
+  "coverage": {
+    "transcript": "existing-sample-read-in-full",
+    "visual": "sampled",
+    "candidateMethod": "ffmpeg fps=1/30 contact sheet, Agent selection",
+    "selectedFrames": 6,
+    "limitations": [
+      "not-continuous-video-understanding",
+      "no-independent-audio-check",
+      "no-device-execution"
+    ]
+  },
+  "observer": {
+    "kind": "host-agent-image-reading",
+    "apiCalls": 0,
+    "automatedVisualPipeline": false
+  },
+  "frames": [
+    {
+      "id": "eyes-and-hands",
+      "file": "assets/eyes-and-hands.jpg",
+      "requestedTimeSec": 190,
+      "timeSec": 190.016688,
+      "width": 852,
+      "height": 480,
+      "visibleFacts": [
+        "电脑 Agent 与安卓设备由已配对授权相连",
+        "图上区分画面返回和动作执行"
+      ],
+      "nearbyTranscriptRangeSec": [
+        185.86,
+        212.14
+      ],
+      "alignment": "group-start-approximate",
+      "sha256": "8293c335301353a33c84e136db6458f7b9610d146140fc158758bbde1a967cf9"
+    },
+    {
+      "id": "permission-boundary",
+      "file": "assets/permission-boundary.jpg",
+      "requestedTimeSec": 410,
+      "timeSec": 410.016687,
+      "width": 852,
+      "height": 480,
+      "visibleFacts": [
+        "Android权限边界框包住安装流程和部分权限调试操作",
+        "图底部注明不是任意访问所有文件或无限权限"
+      ],
+      "nearbyTranscriptRangeSec": [
+        404.22,
+        420.899
+      ],
+      "alignment": "group-start-approximate",
+      "sha256": "3a4f854cf4f06158142b0de0c88500f69138e3f6aae1c62df762cdbccf2954c9"
+    },
+    {
+      "id": "revoke-access",
+      "file": "assets/revoke-access.jpg",
+      "requestedTimeSec": 436,
+      "timeSec": 436.016687,
+      "width": 852,
+      "height": 480,
+      "visibleFacts": [
+        "标题下区分关掉无线调试与删除配对信任",
+        "图中开关关闭并注明无线连接已停止"
+      ],
+      "nearbyTranscriptRangeSec": [
+        432.8,
+        442.38
+      ],
+      "alignment": "group-start-approximate",
+      "sha256": "882eceaa571c7a09833d4cd272b24b5ed83edc6877ae53de6c7d3c9cd922c588"
+    },
+    {
+      "id": "closed-loop",
+      "file": "assets/closed-loop.jpg",
+      "requestedTimeSec": 533,
+      "timeSec": 533.016687,
+      "width": 852,
+      "height": 480,
+      "visibleFacts": [
+        "图中有看、想、动手、再检查四个标签",
+        "副标题说明需要读取操作后的新状态"
+      ],
+      "nearbyTranscriptRangeSec": [
+        513.99,
+        541.88
+      ],
+      "alignment": "group-start-approximate",
+      "sha256": "e38732a20ae7a47ce98dc217c560c7b8aa6bb2d69bcba74580d2a1f11b8bd9a2"
+    },
+    {
+      "id": "drawing-start",
+      "file": "assets/drawing-start.jpg",
+      "requestedTimeSec": 545,
+      "timeSec": 545.016687,
+      "width": 852,
+      "height": 480,
+      "visibleFacts": [
+        "机制图中只展示输入照片，右侧尚未出现线稿和路径"
+      ],
+      "nearbyTranscriptRangeSec": [
+        541.88,
+        556.2
+      ],
+      "alignment": "group-start-approximate",
+      "sha256": "8e9168422fb437ddba6a62f03893cb1be5b2fa7130151eeae9c9577dd97ab9e0"
+    },
+    {
+      "id": "drawing-pipeline",
+      "file": "assets/drawing-pipeline.jpg",
+      "requestedTimeSec": 555,
+      "timeSec": 555.016687,
+      "width": 852,
+      "height": 480,
+      "visibleFacts": [
+        "照片、线稿、触控路径从左到右排列",
+        "末项标出路径加笔压/灰度"
+      ],
+      "nearbyTranscriptRangeSec": [
+        541.88,
+        556.2
+      ],
+      "alignment": "group-start-approximate",
+      "sha256": "204964268fda54906ae11d3eb327e60c7939b5b5f772058a5fcee599b32b4a1f"
+    }
+  ]
+}

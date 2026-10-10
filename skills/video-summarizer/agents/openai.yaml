@@ -1,4 +1,4 @@
 interface:
-  display_name: "视频字幕总结"
-  short_description: "提取 B站或 YouTube 字幕，由 Agent 分块总结，无需 LLM API"
-  default_prompt: "使用 $video-summarizer 提取视频字幕，按时间顺序生成有依据的章节总结。"
+  display_name: "视频图文总结"
+  short_description: "默认原帧与字幕结合的图文文章，可选仅文字，无字幕按需本地转录"
+  default_prompt: "使用 $video-summarizer 总结视频，默认结合字幕与有信息的原帧生成 HTML 和 Markdown 文章，逐字保留原标题，新增评论独立标记；我选择仅文字时跳过视觉流程。"

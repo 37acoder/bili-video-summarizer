@@ -1,0 +1,44 @@
+{
+  "version": "category-v2",
+  "source": "examples/illustrated-summary/categories/profiles.json",
+  "profiles": [
+    {
+      "id": "tech",
+      "label": "科技数码"
+    },
+    {
+      "id": "lecture",
+      "label": "课程讲座"
+    },
+    {
+      "id": "interview",
+      "label": "访谈播客"
+    },
+    {
+      "id": "recording",
+      "label": "录音实录"
+    },
+    {
+      "id": "science",
+      "label": "严肃科普"
+    },
+    {
+      "id": "analysis",
+      "label": "知识评论"
+    },
+    {
+      "id": "documentary",
+      "label": "纪录纪实"
+    },
+    {
+      "id": "drama",
+      "label": "影视剧情"
+    }
+  ],
+  "extensions": [
+    {
+      "id": "life",
+      "label": "生活体验"
+    }
+  ]
+}

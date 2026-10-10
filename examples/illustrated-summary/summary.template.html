@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{视频原标题_逐字保留}}</title><link rel="stylesheet" href="summary.css"></head>
+<body>
+<a class="skip" href="#article">跳到正文</a>
+<div class="masthead"><span class="brand"><span class="brand-icon" aria-hidden="true">✦</span>视频开饭局</span><span class="edition">图文版 · {{日期}}</span></div>
+<main class="layout"><article id="article">
+<header class="hero"><p class="eyebrow">{{主题栏目}}</p><span class="hero-sticker" aria-hidden="true">开整！</span><h1>{{视频原标题_逐字保留}}</h1><p class="dek">{{参考原片开场、情绪与受众写导语，保留作者归属，不编造经历}}</p><div class="meta"><span><a href="{{sourceUrl}}">▶ 看原片</a></span><span>{{真实时长_没有则省略}}</span><span>{{真实截图数量}}</span><span>{{素材依据}}</span></div></header>
+<div class="reading-key" aria-label="内容标识"><span><i class="key-dot" aria-hidden="true"></i>正文：原片内容整理</span><span><i class="key-dot comment" aria-hidden="true"></i>紫色加餐：AI 评论，非原片观点</span></div>
+<nav class="toc" aria-label="文章目录"><a href="#section-1">01 {{章节短标题}}</a><a href="#section-2">02 {{章节短标题}}</a></nav>
+<div class="body-paper">
+<div class="intro" data-origin="source"><p>{{按原片开场自然展开，可概述其玩笑、故事、案例；不要冒充作者讲述自己的经历}}</p></div>
+<aside class="takeaways" data-origin="source" aria-label="原片要点"><h2>这期饭，主要有几口 🍚</h2><ul><li>{{原片支持的要点}}</li><li>{{原片支持的要点}}</li></ul></aside>
+<section id="section-1" data-origin="source"><p class="section-meta"><span class="number">01</span><a href="{{sectionTimestampUrl}}">{{mm:ss}} · 回看这段</a></p><h2>{{贴近原片语气的章节标题}}</h2><p>{{原片内容整理，保留人物、例子、限定、前后更正；自然叙述，少用审核口吻}}</p>
+<figure><a href="assets/{{frameFilename}}" aria-label="打开图1原图"><img src="assets/{{frameFilename}}" width="{{width}}" height="{{height}}" alt="{{图中实际可见内容}}"></a><figcaption><span class="label">原片截图</span> 图1 · {{真实时间}}。{{自然图注，只写画面支持的内容}} <a href="{{frameTimestampUrl}}">回看这段</a></figcaption></figure>
+<p class="visual-note"><strong>画面补充</strong> · {{可验证的视觉新增信息；此处不混入个人评论}}</p>
+<aside class="commentary" data-origin="commentary" aria-label="AI评论：{{评论主题}}"><div class="commentary-head"><span class="commentary-badge">✦ 加餐 · AI 评论</span><span class="commentary-disclaimer">以下是 AI 的看法，非原片观点</span></div><h3>{{鲜明但不虚构事实的评论标题}}</h3><p>{{从原片某个具体点展开自己的观点，可以活跃、大胆，与受众相匹配}}</p><p>{{可讨论延伸、质疑或未来想象，明确是推测；不把评论写成作者原话}}</p></aside>
+</section>
+<section id="section-2" data-origin="source"><p class="section-meta"><span class="number">02</span><a href="{{sectionTimestampUrl}}">{{mm:ss}} · 回看这段</a></p><h2>{{第二个转折}}</h2><p>{{继续沿原片行文，覆盖中后段，不强制每章都配评论}}</p></section>
+<section id="conclusion" class="closing" data-origin="source"><h2>这顿饭吃完，带走什么？</h2><ul><li>{{仅总结原片内容；额外观点放入单独的评论卡}}</li></ul></section>
+<div id="evidence" class="sources"><details><summary>素材出处、时间与整理说明</summary><p>{{来源、覆盖范围、画面采样局限；评论归属说明}}</p><ul><li>{{字幕/图片证据与时间}}</li></ul><p>{{实际存在的疑点或缺口}}</p></details></div>
+<footer class="fineprint">原片内容整理 + 明确标注的 AI 加餐 · {{日期}} · 模板 article-v2</footer>
+</div></article></main>
+</body></html>

@@ -1,0 +1,167 @@
+{
+  "portableCLI": true,
+  "textFlow": {
+    "portablePrepare": true,
+    "inspect": true,
+    "indexIsBounded": true
+  },
+  "templateCases": 11,
+  "cases": [
+    {
+      "profile": "tech",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "lecture",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "interview",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "recording",
+      "media": "audio",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "science",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "analysis",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "documentary",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "drama",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "life",
+      "media": "video",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "lecture",
+      "media": "audio",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    },
+    {
+      "profile": "interview",
+      "media": "audio",
+      "unfilled": true,
+      "layouts": {
+        "320": true,
+        "390": true,
+        "1440": true
+      },
+      "titleConsistent": true,
+      "cssLoaded": true,
+      "commentAttributed": true,
+      "noOverwrite": true
+    }
+  ],
+  "browserErrors": [],
+  "failures": []
+}

@@ -1,0 +1,39 @@
+{
+  "titleMatchesOriginal": true,
+  "layouts": {
+    "desktop": {
+      "viewport": 1440,
+      "horizontalOverflow": false,
+      "images": true,
+      "anchors": true
+    },
+    "mobile": {
+      "viewport": 390,
+      "horizontalOverflow": false,
+      "images": true,
+      "anchors": true
+    },
+    "narrow": {
+      "viewport": 320,
+      "horizontalOverflow": false,
+      "images": true,
+      "anchors": true
+    }
+  },
+  "comments": {
+    "count": 4,
+    "allExplicit": true,
+    "allDashed": true
+  },
+  "evidenceToggle": true,
+  "print": {
+    "evidenceVisible": true,
+    "commentsLabeled": true
+  },
+  "markdown": {
+    "titleMatchesOriginal": true,
+    "commentBlocks": 4,
+    "allFrames": true
+  },
+  "browserErrors": []
+}

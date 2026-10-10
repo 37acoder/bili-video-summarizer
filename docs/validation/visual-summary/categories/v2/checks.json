@@ -1,0 +1,301 @@
+{
+  "profiles": [
+    {
+      "id": "tech",
+      "theme": "tech",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 加餐 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(255, 231, 117)",
+      "audioWithoutImages": null,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "lecture",
+      "theme": "lecture",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 课后追问 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(231, 231, 255)",
+      "audioWithoutImages": null,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "interview",
+      "theme": "interview",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 换个角度 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(84, 53, 86)",
+      "audioWithoutImages": null,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "recording",
+      "theme": "recording",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 整理者追问 · AI 评论",
+      "sampleWarning": "合成内容演示：正文、时间与发言均为模拟；不对应真实录音。纯音频版不配图片。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(214, 236, 232)",
+      "audioWithoutImages": true,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "science",
+      "theme": "science",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 延伸思考 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(237, 245, 251)",
+      "audioWithoutImages": null,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "analysis",
+      "theme": "analysis",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 另一种看法 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(255, 253, 246)",
+      "audioWithoutImages": null,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "documentary",
+      "theme": "documentary",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 现场之外 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(228, 187, 112)",
+      "audioWithoutImages": null,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "drama",
+      "theme": "drama",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 观后想法 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(25, 38, 53)",
+      "audioWithoutImages": null,
+      "spoilerInitiallyClosed": true,
+      "spoilerReveal": true,
+      "printOpenPlotVisible": true,
+      "printClosedPlotHidden": true,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    }
+  ],
+  "browserErrors": [],
+  "keyboardSelection": true,
+  "deepLink": true,
+  "templates": [
+    {
+      "id": "tech",
+      "audioWithoutImages": null,
+      "theme": "tech",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "lecture",
+      "audioWithoutImages": null,
+      "theme": "lecture",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "interview",
+      "audioWithoutImages": null,
+      "theme": "interview",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "recording",
+      "audioWithoutImages": true,
+      "theme": "recording",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "science",
+      "audioWithoutImages": null,
+      "theme": "science",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "analysis",
+      "audioWithoutImages": null,
+      "theme": "analysis",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "documentary",
+      "audioWithoutImages": null,
+      "theme": "documentary",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "drama",
+      "audioWithoutImages": null,
+      "theme": "drama",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    }
+  ]
+}

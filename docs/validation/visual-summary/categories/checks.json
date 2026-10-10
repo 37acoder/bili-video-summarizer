@@ -1,0 +1,217 @@
+{
+  "profiles": [
+    {
+      "id": "tech",
+      "theme": "tech",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 加餐 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(255, 231, 117)",
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "entertainment",
+      "theme": "entertainment",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 接个梗 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(255, 184, 210)",
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "drama",
+      "theme": "drama",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 观后想法 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(25, 38, 53)",
+      "spoilerInitiallyClosed": true,
+      "spoilerReveal": true,
+      "printOpenPlotVisible": true,
+      "printClosedPlotHidden": true,
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "science",
+      "theme": "science",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 延伸思考 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(237, 245, 251)",
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "analysis",
+      "theme": "analysis",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 另一种看法 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(255, 253, 246)",
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    },
+    {
+      "id": "life",
+      "theme": "life",
+      "titleMatchesDemo": true,
+      "commentLabel": "✦ 顺着想想 · AI 评论",
+      "sampleWarning": "合成内容演示：正文为模拟摘要，图片区域为占位；不作为视频事实或视觉理解证据。",
+      "layouts": {
+        "desktop": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "mobile": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        },
+        "narrow": {
+          "horizontalOverflow": false,
+          "commentDashed": true,
+          "selectedButtons": 1
+        }
+      },
+      "heroColor": "rgb(245, 223, 173)",
+      "sourcesToggle": true,
+      "printSourcesVisible": true
+    }
+  ],
+  "browserErrors": [],
+  "keyboardSelection": true,
+  "deepLink": true,
+  "templates": [
+    {
+      "id": "tech",
+      "theme": "tech",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "entertainment",
+      "theme": "entertainment",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "drama",
+      "theme": "drama",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "science",
+      "theme": "science",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "analysis",
+      "theme": "analysis",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    },
+    {
+      "id": "life",
+      "theme": "life",
+      "titlePlaceholderMatches": true,
+      "commentAttributed": true,
+      "stylesApplied": true
+    }
+  ]
+}
