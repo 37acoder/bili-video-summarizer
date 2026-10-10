@@ -155,4 +155,21 @@ globalThis.fetch=async url=>{
       await expect(stat(out)).rejects.toMatchObject({ code: 'ENOENT' })
     }
   })
+
+  it('verifies chapter evidence through the packaged CLI and rejects a late anchor even with a valid sidecar quote', async () => {
+    const dir = await temp(), script = join(process.cwd(), 'skills/video-summarizer/scripts/video-source.cjs')
+    const input = join(dir, 'input.txt'); await writeFile(input, '[00:49] 第一条要点\n[01:55] 第二条要点\n' + '更多上下文'.repeat(40))
+    const output = join(dir, 'output')
+    await run(process.execPath, [script, 'prepare', '--transcript', input, '--title', '测试', '--out', output])
+    const summary = join(output, 'summary.md'), chapters = join(output, 'chapters.json')
+    await writeFile(summary, '# 测试\n### [01:55] 主题\n- 第一条要点（item 0）\n- 第二条要点（item 1）\n')
+    await writeFile(chapters, JSON.stringify([{ heading: '主题', sourceItemIndex: 1, sourceStartSeconds: 115, sourceQuote: '第二条要点' }]))
+    const args = [script, 'verify-summary', '--manifest', join(output, 'manifest.json'), '--summary', summary, '--chapters', chapters]
+    await expect(run(process.execPath, args)).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('CHAPTER_START_AFTER_CITED_CONTENT') })
+    await writeFile(summary, '# 测试\n### [00:49] 主题\n- 第一条要点（item 0）\n- 第二条要点（item 1）\n')
+    await writeFile(chapters, JSON.stringify([{ heading: '主题', sourceItemIndex: 0, sourceStartSeconds: 49, sourceQuote: '第一条要点' }]))
+    expect(JSON.parse((await run(process.execPath, args)).stdout).valid).toBe(true)
+    await writeFile(summary, '# 测试\n### [00:49] 主题\n- 原文应为猜测（item 0）\n')
+    await expect(run(process.execPath, args)).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('CORRECTION_REQUIRES_REVIEW') })
+  })
 })

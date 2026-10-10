@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { defaultAuthFile, startLogin, pollLogin, importSession, readSession, checkSession, request } from './auth'
 import { localTranscript, parseVideo, prepareArtifacts } from './prepare'
+import { verifySummary } from './verify-summary'
 import { resolveSubtitleConfig } from '../config'
 import { fetchTranscriptWithLocal } from '../transcription/fetch'
 import { doctorLocalTranscription, setupLocalTranscription } from '../transcription/environment'
@@ -18,6 +19,7 @@ const help = `video-summarizer source CLI — Node.js >=22; no LLM API required
   prepare --video <URL|BV|av|YouTubeID> --out <new-directory>
   prepare --transcript <txt|json> --out <new-directory> [--title <title>]
   inspect --manifest <manifest.json> [--offset 0] [--limit 20]  Bounded manifest page
+  verify-summary --manifest <manifest.json> --summary <summary.md> --chapters <chapters.json>
   asr doctor                                      Check optional local transcription tools/model
   asr setup                                       Explicitly install missing tools/model only
 Options: --auth-file <path>, --chunk-tokens <128..16000; default 3000>,
@@ -43,6 +45,7 @@ async function main() {
     'auth-file': { type: 'string' }, video: { type: 'string' }, transcript: { type: 'string' },
     title: { type: 'string' }, 'chunk-tokens': { type: 'string' }, source: { type: 'string' }, page: { type: 'string' },
     manifest: { type: 'string' }, offset: { type: 'string' }, limit: { type: 'string' },
+    summary: { type: 'string' }, chapters: { type: 'string' },
     'caption-retries': { type: 'string' },
     asr: { type: 'string' }, model: { type: 'string' }, 'model-path': { type: 'string' },
     'asr-language': { type: 'string' }, 'asr-cache-dir': { type: 'string' }, 'asr-config': { type: 'string' },
@@ -92,6 +95,11 @@ async function main() {
       }
       default: throw new Error('UNKNOWN_AUTH_COMMAND')
     }
+  } else if (positionals[0] === 'verify-summary') {
+    if (!values.manifest || !values.summary || !values.chapters) throw new Error('MISSING_SUMMARY_VERIFICATION_OPTIONS')
+    const verified = await verifySummary(values.manifest, values.summary, values.chapters)
+    result = verified
+    if (!verified.valid) process.exitCode = 1
   } else if (positionals[0] === 'inspect') {
     if (!values.manifest) throw new Error('MISSING_OPTION: --manifest')
     const offset = Number(values.offset ?? 0), limit = Number(values.limit ?? 20)

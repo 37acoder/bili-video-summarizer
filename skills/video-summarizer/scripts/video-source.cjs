@@ -4422,10 +4422,10 @@ var require_browser = __commonJS({
           text = canvas;
           canvas = void 0;
         }
-        return new Promise(function(resolve4, reject) {
+        return new Promise(function(resolve5, reject) {
           try {
             const data = QRCode2.create(text, opts);
-            resolve4(renderFunc(data, canvas, opts));
+            resolve5(renderFunc(data, canvas, opts));
           } catch (e) {
             reject(e);
           }
@@ -4506,11 +4506,11 @@ var require_server = __commonJS({
     }
     function render(renderFunc, text, params) {
       if (!params.cb) {
-        return new Promise(function(resolve4, reject) {
+        return new Promise(function(resolve5, reject) {
           try {
             const data = QRCode2.create(text, params.opts);
             return renderFunc(data, params.opts, function(err, data2) {
-              return err ? reject(err) : resolve4(data2);
+              return err ? reject(err) : resolve5(data2);
             });
           } catch (e) {
             reject(e);
@@ -4836,29 +4836,29 @@ function fingerprint(value) {
   return (0, import_node_crypto3.createHash)("sha256").update(JSON.stringify(value)).digest("hex");
 }
 async function resolveLocalOptions(options = {}) {
-  const configFile = (0, import_node_path3.resolve)(options.configFile ?? (0, import_node_path3.join)((0, import_node_os2.homedir)(), ".config/video-summarizer/asr.json"));
+  const configFile = (0, import_node_path4.resolve)(options.configFile ?? (0, import_node_path4.join)((0, import_node_os2.homedir)(), ".config/video-summarizer/asr.json"));
   let stored = {};
   try {
-    stored = JSON.parse(await (0, import_promises3.readFile)(configFile, "utf8"));
+    stored = JSON.parse(await (0, import_promises4.readFile)(configFile, "utf8"));
     if (!stored || typeof stored !== "object" || Array.isArray(stored)) throw new Error();
   } catch (error) {
     if (error.code !== "ENOENT") throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Invalid local transcription configuration");
   }
   const model = options.model ?? stored.model ?? "small";
   if (!Object.hasOwn(LOCAL_MODELS, model)) throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Use small or medium, or provide --model-path");
-  const cacheDir = (0, import_node_path3.resolve)(options.cacheDir ?? stored.cacheDir ?? (0, import_node_path3.join)((0, import_node_os2.homedir)(), ".cache/video-summarizer"));
+  const cacheDir = (0, import_node_path4.resolve)(options.cacheDir ?? stored.cacheDir ?? (0, import_node_path4.join)((0, import_node_os2.homedir)(), ".cache/video-summarizer"));
   const language = options.language ?? stored.language ?? "auto";
   if (!/^[a-z]{2,3}$/.test(language) && language !== "auto") throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Use a Whisper language code or auto");
-  const modelPath = (0, import_node_path3.resolve)(options.modelPath ?? (options.model ? void 0 : stored.modelPath) ?? (0, import_node_path3.join)(cacheDir, "models", `ggml-${model}.bin`));
+  const modelPath = (0, import_node_path4.resolve)(options.modelPath ?? (options.model ? void 0 : stored.modelPath) ?? (0, import_node_path4.join)(cacheDir, "models", `ggml-${model}.bin`));
   const tools = Object.fromEntries(Object.entries(commands).map(([key, command]) => [key, options.tools?.[key] ?? stored.tools?.[key] ?? command]));
   if (Object.values(tools).some((value) => typeof value !== "string" || !value.trim())) throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Invalid tool path");
   return { model, modelPath, language, cacheDir, configFile, tools };
 }
 async function checkModel(path) {
   try {
-    const info = await (0, import_promises3.stat)(path);
+    const info = await (0, import_promises4.stat)(path);
     if (!info.isFile() || info.size < 1024 * 1024) return { status: "invalid" };
-    const file = await (0, import_promises3.open)(path, "r");
+    const file = await (0, import_promises4.open)(path, "r");
     const header = Buffer.alloc(8);
     try {
       await file.read(header, 0, 8, 0);
@@ -4867,7 +4867,7 @@ async function checkModel(path) {
     }
     if (header.readUInt32LE(0) !== 1734831468 || header.readUInt32LE(4) < 51865) return { status: "invalid" };
     const hash = await sha256File(path);
-    const known = Object.entries(LOCAL_MODELS).find(([name]) => (0, import_node_path3.basename)(path) === `ggml-${name}.bin`)?.[1];
+    const known = Object.entries(LOCAL_MODELS).find(([name]) => (0, import_node_path4.basename)(path) === `ggml-${name}.bin`)?.[1];
     if (known && (info.size !== known.bytes || hash !== known.sha256)) return { status: "invalid" };
     return { status: "ready", bytes: info.size, sha256: hash };
   } catch (error) {
@@ -4933,22 +4933,22 @@ async function setupLocalTranscription(options = {}) {
     options.onProgress?.({ stage: "install-tools", status: "complete" });
   }
   if (before.model.status === "missing") {
-    if (options.modelPath || config.modelPath !== (0, import_node_path3.join)(config.cacheDir, "models", `ggml-${config.model}.bin`)) throw new SummarizeError(400, "ASR_MODEL_INVALID", "Specified model file is missing; provide an existing model or omit --model-path to download");
-    await (0, import_promises3.mkdir)((0, import_node_path3.dirname)(config.modelPath), { recursive: true, mode: 448 });
+    if (options.modelPath || config.modelPath !== (0, import_node_path4.join)(config.cacheDir, "models", `ggml-${config.model}.bin`)) throw new SummarizeError(400, "ASR_MODEL_INVALID", "Specified model file is missing; provide an existing model or omit --model-path to download");
+    await (0, import_promises4.mkdir)((0, import_node_path4.dirname)(config.modelPath), { recursive: true, mode: 448 });
     const temp = `${config.modelPath}.${(0, import_node_crypto3.randomUUID)()}.part`;
     options.onProgress?.({ stage: "download-model", status: "started" });
     try {
       const response = await fetch(`https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${config.model}.bin`, { signal: options.signal ?? AbortSignal.timeout(18e5) });
       if (!response.ok || !response.body) throw new SummarizeError(502, "ASR_MODEL_DOWNLOAD_FAILED", `Model download HTTP ${response.status}`);
-      await (0, import_promises4.pipeline)(import_node_stream.Readable.fromWeb(response.body), (0, import_node_fs.createWriteStream)(temp, { flags: "wx", mode: 384 }), { signal: options.signal });
+      await (0, import_promises5.pipeline)(import_node_stream.Readable.fromWeb(response.body), (0, import_node_fs.createWriteStream)(temp, { flags: "wx", mode: 384 }), { signal: options.signal });
       const expected = LOCAL_MODELS[config.model];
-      if ((await (0, import_promises3.stat)(temp)).size !== expected.bytes || await sha256File(temp) !== expected.sha256) throw new SummarizeError(502, "ASR_MODEL_INVALID", "Downloaded model checksum failed");
-      await (0, import_promises3.rename)(temp, config.modelPath);
+      if ((await (0, import_promises4.stat)(temp)).size !== expected.bytes || await sha256File(temp) !== expected.sha256) throw new SummarizeError(502, "ASR_MODEL_INVALID", "Downloaded model checksum failed");
+      await (0, import_promises4.rename)(temp, config.modelPath);
     } catch (error) {
       if (error instanceof SummarizeError) throw error;
       throw new SummarizeError(options.signal?.aborted ? 499 : 502, options.signal?.aborted ? "ASR_CANCELLED" : "ASR_MODEL_DOWNLOAD_FAILED", "Model download interrupted; rerun setup");
     } finally {
-      await (0, import_promises3.rm)(temp, { force: true });
+      await (0, import_promises4.rm)(temp, { force: true });
     }
     options.onProgress?.({ stage: "download-model", status: "complete" });
   }
@@ -4957,17 +4957,17 @@ async function setupLocalTranscription(options = {}) {
   await privateJson(config.configFile, config);
   return after;
 }
-var import_node_fs, import_promises3, import_node_os2, import_node_path3, import_node_crypto3, import_node_stream, import_promises4, LOCAL_MODELS, commands, packageFor;
+var import_node_fs, import_promises4, import_node_os2, import_node_path4, import_node_crypto3, import_node_stream, import_promises5, LOCAL_MODELS, commands, packageFor;
 var init_environment = __esm({
   "src/transcription/environment.ts"() {
     "use strict";
     import_node_fs = require("node:fs");
-    import_promises3 = require("node:fs/promises");
+    import_promises4 = require("node:fs/promises");
     import_node_os2 = require("node:os");
-    import_node_path3 = require("node:path");
+    import_node_path4 = require("node:path");
     import_node_crypto3 = require("node:crypto");
     import_node_stream = require("node:stream");
-    import_promises4 = require("node:stream/promises");
+    import_promises5 = require("node:stream/promises");
     init_errors();
     init_auth();
     init_process();
@@ -4989,32 +4989,32 @@ function cancelled(signal) {
   if (signal?.aborted) throw new SummarizeError(499, "ASR_CANCELLED", "Local transcription cancelled");
 }
 async function withLock(directory, work) {
-  await (0, import_promises5.mkdir)(directory, { recursive: true, mode: 448 });
-  const path = (0, import_node_path4.join)(directory, ".lock");
+  await (0, import_promises6.mkdir)(directory, { recursive: true, mode: 448 });
+  const path = (0, import_node_path5.join)(directory, ".lock");
   for (let attempt = 0; ; attempt++) {
     try {
-      const file = await (0, import_promises5.open)(path, "wx", 384);
+      const file = await (0, import_promises6.open)(path, "wx", 384);
       await file.writeFile(String(process.pid));
       await file.close();
       break;
     } catch (error) {
       if (error.code !== "EEXIST") throw error;
-      const pid = Number(await (0, import_promises5.readFile)(path, "utf8").catch(() => "0"));
+      const pid = Number(await (0, import_promises6.readFile)(path, "utf8").catch(() => "0"));
       let live = true;
       try {
-        if (!Number.isInteger(pid) || pid <= 0) live = Date.now() - (await (0, import_promises5.stat)(path)).mtimeMs < 6e4;
+        if (!Number.isInteger(pid) || pid <= 0) live = Date.now() - (await (0, import_promises6.stat)(path)).mtimeMs < 6e4;
         else process.kill(pid, 0);
       } catch (error2) {
         live = error2.code === "EPERM";
       }
       if (live || attempt) throw new SummarizeError(409, "ASR_BUSY", "This transcription stage is already running; retry after it finishes");
-      await (0, import_promises5.rm)(path, { force: true });
+      await (0, import_promises6.rm)(path, { force: true });
     }
   }
   try {
     return await work();
   } finally {
-    await (0, import_promises5.rm)(path, { force: true });
+    await (0, import_promises6.rm)(path, { force: true });
   }
 }
 function parseSegments(raw, duration) {
@@ -5050,87 +5050,87 @@ async function transcribeLocally(input, original, subtitles, options) {
     progress?.({ stage: name, status: "complete", seconds: (Date.now() - start) / 1e3 });
     return result;
   };
-  const mediaDir = (0, import_node_path4.join)(config.cacheDir, "audio", video.source, `${video.videoId}-p${page}`);
+  const mediaDir = (0, import_node_path5.join)(config.cacheDir, "audio", video.source, `${video.videoId}-p${page}`);
   const audio = await withLock(mediaDir, async () => {
-    const marker = (0, import_node_path4.join)(mediaDir, "complete.json");
+    const marker = (0, import_node_path5.join)(mediaDir, "complete.json");
     try {
-      const value = JSON.parse(await (0, import_promises5.readFile)(marker, "utf8"));
+      const value = JSON.parse(await (0, import_promises6.readFile)(marker, "utf8"));
       if (value.version !== 1 || !/^audio\.[a-zA-Z0-9]+$/.test(value.file) || !Number.isFinite(value.duration) || value.duration <= 0) throw invalidAudio();
-      const path = (0, import_node_path4.join)(mediaDir, value.file);
-      if ((await (0, import_promises5.stat)(path)).size !== value.bytes || await sha256File(path) !== value.sha256 || original.media?.cid && value.cid !== original.media.cid || original.media?.durationSeconds && Math.abs(value.duration - original.media.durationSeconds) > Math.max(3, original.media.durationSeconds * 0.01)) throw invalidAudio();
+      const path = (0, import_node_path5.join)(mediaDir, value.file);
+      if ((await (0, import_promises6.stat)(path)).size !== value.bytes || await sha256File(path) !== value.sha256 || original.media?.cid && value.cid !== original.media.cid || original.media?.durationSeconds && Math.abs(value.duration - original.media.durationSeconds) > Math.max(3, original.media.durationSeconds * 0.01)) throw invalidAudio();
       progress?.({ stage: "download-audio", status: "cached" });
       return value;
     } catch {
-      await (0, import_promises5.rm)(marker, { force: true });
+      await (0, import_promises6.rm)(marker, { force: true });
     }
-    for (const entry of await (0, import_promises5.readdir)(mediaDir)) if (entry.startsWith(".download-")) await (0, import_promises5.rm)((0, import_node_path4.join)(mediaDir, entry), { recursive: true, force: true });
-    const temp = (0, import_node_path4.join)(mediaDir, `.download-${(0, import_node_crypto4.randomUUID)()}`);
-    await (0, import_promises5.mkdir)(temp, { mode: 448 });
-    const cookie = (0, import_node_path4.join)(temp, "cookies.txt");
+    for (const entry of await (0, import_promises6.readdir)(mediaDir)) if (entry.startsWith(".download-")) await (0, import_promises6.rm)((0, import_node_path5.join)(mediaDir, entry), { recursive: true, force: true });
+    const temp = (0, import_node_path5.join)(mediaDir, `.download-${(0, import_node_crypto4.randomUUID)()}`);
+    await (0, import_promises6.mkdir)(temp, { mode: 448 });
+    const cookie = (0, import_node_path5.join)(temp, "cookies.txt");
     try {
       return await stage("download-audio", async () => {
         const url = video.source === "bilibili" ? `https://www.bilibili.com/video/${video.videoId}/?p=${page}` : `https://www.youtube.com/watch?v=${video.videoId}`;
-        const args = ["--ignore-config", "--no-playlist", "--retries", "1", "--socket-timeout", "30", "-f", "bestaudio", "--write-info-json", "-o", (0, import_node_path4.join)(temp, "audio.%(ext)s")];
+        const args = ["--ignore-config", "--no-playlist", "--retries", "1", "--socket-timeout", "30", "-f", "bestaudio", "--write-info-json", "-o", (0, import_node_path5.join)(temp, "audio.%(ext)s")];
         const token = subtitles.bilibiliSessionTokens[0];
         if (video.source === "bilibili" && token) {
           if (/[\r\n\t]/.test(token)) throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Invalid Bilibili session value");
-          await (0, import_promises5.writeFile)(cookie, `# Netscape HTTP Cookie File
+          await (0, import_promises6.writeFile)(cookie, `# Netscape HTTP Cookie File
 .bilibili.com	TRUE	/	TRUE	0	SESSDATA	${token}
 `, { mode: 384, flag: "wx" });
           args.push("--cookies", cookie);
         }
         await runTool(tools.ytDlp, [...args, "--", url], "download-audio", signal, 6e5);
-        const info = JSON.parse(await (0, import_promises5.readFile)((0, import_node_path4.join)(temp, "audio.info.json"), "utf8"));
+        const info = JSON.parse(await (0, import_promises6.readFile)((0, import_node_path5.join)(temp, "audio.info.json"), "utf8"));
         if (!info.ext || !/^[a-zA-Z0-9]+$/.test(info.ext)) throw invalidAudio();
-        await (0, import_promises5.rm)((0, import_node_path4.join)(temp, "audio.info.json"));
-        const file = `audio.${info.ext}`, path = (0, import_node_path4.join)(temp, file);
+        await (0, import_promises6.rm)((0, import_node_path5.join)(temp, "audio.info.json"));
+        const file = `audio.${info.ext}`, path = (0, import_node_path5.join)(temp, file);
         const duration = Number((await runTool(tools.ffprobe, ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path], "probe-audio", signal)).trim());
         const expected = original.media?.durationSeconds ?? info.duration;
         if (!Number.isFinite(duration) || duration <= 0 || expected !== void 0 && Math.abs(duration - expected) > Math.max(3, expected * 0.01)) throw invalidAudio();
-        const value = { version: 1, file, bytes: (await (0, import_promises5.stat)(path)).size, sha256: await sha256File(path), duration, title: original.title || info.title || video.videoId, cid: original.media?.cid };
+        const value = { version: 1, file, bytes: (await (0, import_promises6.stat)(path)).size, sha256: await sha256File(path), duration, title: original.title || info.title || video.videoId, cid: original.media?.cid };
         if (!value.bytes) throw invalidAudio();
         cancelled(signal);
-        await (0, import_promises5.rename)(path, (0, import_node_path4.join)(mediaDir, file));
+        await (0, import_promises6.rename)(path, (0, import_node_path5.join)(mediaDir, file));
         await privateJson(marker, value);
         return value;
       });
     } finally {
-      await (0, import_promises5.rm)(temp, { recursive: true, force: true });
+      await (0, import_promises6.rm)(temp, { recursive: true, force: true });
     }
   });
-  const asrDir = (0, import_node_path4.join)(config.cacheDir, "transcripts", fingerprint({ engine: "whisper.cpp-v1", audio: audio.sha256, model: doctor.model.sha256, language: config.language }));
+  const asrDir = (0, import_node_path5.join)(config.cacheDir, "transcripts", fingerprint({ engine: "whisper.cpp-v1", audio: audio.sha256, model: doctor.model.sha256, language: config.language }));
   const parsed = await withLock(asrDir, async () => {
-    const marker = (0, import_node_path4.join)(asrDir, "complete.json");
+    const marker = (0, import_node_path5.join)(asrDir, "complete.json");
     try {
-      const value = JSON.parse(await (0, import_promises5.readFile)(marker, "utf8"));
-      for (const ext of ["json", "srt", "txt"]) if (await sha256File((0, import_node_path4.join)(asrDir, `whisper.${ext}`)) !== value.artifacts[ext]) throw invalidTranscript();
-      const result = parseSegments(JSON.parse(await (0, import_promises5.readFile)((0, import_node_path4.join)(asrDir, "whisper.json"), "utf8")), audio.duration);
+      const value = JSON.parse(await (0, import_promises6.readFile)(marker, "utf8"));
+      for (const ext of ["json", "srt", "txt"]) if (await sha256File((0, import_node_path5.join)(asrDir, `whisper.${ext}`)) !== value.artifacts[ext]) throw invalidTranscript();
+      const result = parseSegments(JSON.parse(await (0, import_promises6.readFile)((0, import_node_path5.join)(asrDir, "whisper.json"), "utf8")), audio.duration);
       progress?.({ stage: "transcribe", status: "cached" });
       return result;
     } catch {
-      await (0, import_promises5.rm)(marker, { force: true });
+      await (0, import_promises6.rm)(marker, { force: true });
     }
-    for (const entry of await (0, import_promises5.readdir)(asrDir)) if (entry.startsWith(".stage-")) await (0, import_promises5.rm)((0, import_node_path4.join)(asrDir, entry), { recursive: true, force: true });
-    const temp = (0, import_node_path4.join)(asrDir, `.stage-${(0, import_node_crypto4.randomUUID)()}`);
-    await (0, import_promises5.mkdir)(temp, { mode: 448 });
+    for (const entry of await (0, import_promises6.readdir)(asrDir)) if (entry.startsWith(".stage-")) await (0, import_promises6.rm)((0, import_node_path5.join)(asrDir, entry), { recursive: true, force: true });
+    const temp = (0, import_node_path5.join)(asrDir, `.stage-${(0, import_node_crypto4.randomUUID)()}`);
+    await (0, import_promises6.mkdir)(temp, { mode: 448 });
     try {
-      const wav = (0, import_node_path4.join)(temp, "audio.wav"), prefix = (0, import_node_path4.join)(temp, "whisper");
-      await stage("normalize-audio", () => runTool(tools.ffmpeg, ["-nostdin", "-hide_banner", "-loglevel", "error", "-i", (0, import_node_path4.join)(mediaDir, audio.file), "-vn", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wav], "normalize-audio", signal, 6e5));
+      const wav = (0, import_node_path5.join)(temp, "audio.wav"), prefix = (0, import_node_path5.join)(temp, "whisper");
+      await stage("normalize-audio", () => runTool(tools.ffmpeg, ["-nostdin", "-hide_banner", "-loglevel", "error", "-i", (0, import_node_path5.join)(mediaDir, audio.file), "-vn", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wav], "normalize-audio", signal, 6e5));
       return await stage("transcribe", async () => {
         await runTool(tools.whisperCli, ["-m", config.modelPath, "-f", wav, "-l", config.language, "-oj", "-osrt", "-otxt", "-of", prefix], "transcribe", signal, 72e5);
-        const result = parseSegments(JSON.parse(await (0, import_promises5.readFile)(`${prefix}.json`, "utf8")), audio.duration);
+        const result = parseSegments(JSON.parse(await (0, import_promises6.readFile)(`${prefix}.json`, "utf8")), audio.duration);
         const artifacts = {};
         for (const ext of ["json", "srt", "txt"]) {
-          if (!(await (0, import_promises5.stat)(`${prefix}.${ext}`)).size) throw invalidTranscript();
+          if (!(await (0, import_promises6.stat)(`${prefix}.${ext}`)).size) throw invalidTranscript();
           artifacts[ext] = await sha256File(`${prefix}.${ext}`);
         }
         cancelled(signal);
-        for (const ext of ["json", "srt", "txt"]) await (0, import_promises5.rename)(`${prefix}.${ext}`, (0, import_node_path4.join)(asrDir, `whisper.${ext}`));
-        await privateJson(marker, { version: 1, engine: "whisper.cpp", model: (0, import_node_path4.basename)(config.modelPath), modelSha256: doctor.model.sha256, requestedLanguage: config.language, detectedLanguage: result.language, audioDurationSeconds: audio.duration, audioSha256: audio.sha256, artifacts });
+        for (const ext of ["json", "srt", "txt"]) await (0, import_promises6.rename)(`${prefix}.${ext}`, (0, import_node_path5.join)(asrDir, `whisper.${ext}`));
+        await privateJson(marker, { version: 1, engine: "whisper.cpp", model: (0, import_node_path5.basename)(config.modelPath), modelSha256: doctor.model.sha256, requestedLanguage: config.language, detectedLanguage: result.language, audioDurationSeconds: audio.duration, audioSha256: audio.sha256, artifacts });
         return result;
       });
     } finally {
-      await (0, import_promises5.rm)(temp, { recursive: true, force: true });
+      await (0, import_promises6.rm)(temp, { recursive: true, force: true });
     }
   });
   cancelled(signal);
@@ -5141,15 +5141,15 @@ async function transcribeLocally(input, original, subtitles, options) {
     subtitlesArray: items,
     transcriptText: items.map((item) => item.text).join(" "),
     usedDescription: false,
-    transcription: { engine: "whisper.cpp", model: (0, import_node_path4.basename)(config.modelPath), modelSha256: doctor.model.sha256, requestedLanguage: config.language, detectedLanguage: parsed.language, audioDurationSeconds: audio.duration, audioSha256: audio.sha256, source: { ...video, ...video.source === "bilibili" ? { pageNumber: page } : {} }, artifacts: { json: (0, import_node_path4.join)(asrDir, "whisper.json"), srt: (0, import_node_path4.join)(asrDir, "whisper.srt"), text: (0, import_node_path4.join)(asrDir, "whisper.txt") } }
+    transcription: { engine: "whisper.cpp", model: (0, import_node_path5.basename)(config.modelPath), modelSha256: doctor.model.sha256, requestedLanguage: config.language, detectedLanguage: parsed.language, audioDurationSeconds: audio.duration, audioSha256: audio.sha256, source: { ...video, ...video.source === "bilibili" ? { pageNumber: page } : {} }, artifacts: { json: (0, import_node_path5.join)(asrDir, "whisper.json"), srt: (0, import_node_path5.join)(asrDir, "whisper.srt"), text: (0, import_node_path5.join)(asrDir, "whisper.txt") } }
   };
 }
-var import_promises5, import_node_path4, import_node_crypto4, invalidAudio, invalidTranscript;
+var import_promises6, import_node_path5, import_node_crypto4, invalidAudio, invalidTranscript;
 var init_local = __esm({
   "src/transcription/local.ts"() {
     "use strict";
-    import_promises5 = require("node:fs/promises");
-    import_node_path4 = require("node:path");
+    import_promises6 = require("node:fs/promises");
+    import_node_path5 = require("node:path");
     import_node_crypto4 = require("node:crypto");
     init_errors();
     init_auth();
@@ -5162,9 +5162,9 @@ var init_local = __esm({
 
 // src/agent/cli.ts
 var import_node_util = require("node:util");
-var import_promises6 = require("node:fs/promises");
-var import_node_path5 = require("node:path");
-var import_promises7 = require("node:timers/promises");
+var import_promises7 = require("node:fs/promises");
+var import_node_path6 = require("node:path");
+var import_promises8 = require("node:timers/promises");
 init_auth();
 
 // src/agent/prepare.ts
@@ -5341,6 +5341,53 @@ async function prepareArtifacts(transcript, out, budget, provenance) {
   };
   await (0, import_promises2.writeFile)((0, import_node_path2.join)(directory, "manifest.json"), JSON.stringify(manifest, null, 2));
   return { manifest: (0, import_node_path2.join)(directory, "manifest.json"), chunkCount: entries.length, usedDescription: false };
+}
+
+// src/agent/verify-summary.ts
+var import_promises3 = require("node:fs/promises");
+var import_node_path3 = require("node:path");
+async function verifySummary(manifestPath, summaryPath, chaptersPath) {
+  const directory = (0, import_node_path3.dirname)((0, import_node_path3.resolve)(manifestPath));
+  const manifest = JSON.parse(await (0, import_promises3.readFile)(manifestPath, "utf8"));
+  if (manifest.version !== 1 || !Array.isArray(manifest.chunks)) throw new Error("INVALID_MANIFEST");
+  const items = /* @__PURE__ */ new Map();
+  const notes = [];
+  for (const chunk of manifest.chunks) {
+    if (!/^chunks\/\d+\.json$/.test(chunk.file) || !/^maps\/\d+\.md$/.test(chunk.mapFile)) throw new Error("INVALID_MANIFEST");
+    const data = JSON.parse(await (0, import_promises3.readFile)((0, import_node_path3.resolve)(directory, chunk.file), "utf8"));
+    for (const item of data.items) items.set(item.index, item);
+    if (manifest.chunkCount > 1) notes.push({ file: chunk.mapFile, text: await (0, import_promises3.readFile)((0, import_node_path3.resolve)(directory, chunk.mapFile), "utf8") });
+  }
+  const summary = await (0, import_promises3.readFile)(summaryPath, "utf8");
+  const raw = JSON.parse(await (0, import_promises3.readFile)(chaptersPath, "utf8"));
+  const chapters = Array.isArray(raw) ? raw : raw.chapters;
+  if (!Array.isArray(chapters)) throw new Error("INVALID_CHAPTERS");
+  const headings = [...summary.matchAll(/^#{2,3}\s+\[(\d+:\d+(?::\d+)?)\]\s+(.+)$/gm)];
+  const problems = [];
+  if (summary.split(/\r?\n/)[0] !== "# " + manifest.title) problems.push({ reason: "TITLE_MISMATCH" });
+  if (!headings.length || headings.length !== chapters.length) problems.push({ reason: "CHAPTER_COUNT_MISMATCH" });
+  for (const [index, heading] of headings.entries()) {
+    const chapter = chapters[index], item = items.get(chapter?.sourceItemIndex);
+    const seconds = heading[1].split(":").reduce((total, n) => total * 60 + Number(n), 0);
+    if (!chapter || chapter.heading !== heading[2].trim() || !Number.isInteger(chapter.sourceItemIndex) || !Number.isFinite(chapter.sourceStartSeconds) || chapter.sourceStartSeconds !== item?.s || typeof chapter.sourceQuote !== "string" || !chapter.sourceQuote.trim() || !item?.text.includes(chapter.sourceQuote) || Math.floor(chapter.sourceStartSeconds) !== seconds) {
+      problems.push({ chapter: index + 1, reason: "CHAPTER_SOURCE_MISMATCH" });
+      continue;
+    }
+    const body = summary.slice(heading.index + heading[0].length, headings[index + 1]?.index ?? summary.length);
+    const depth = heading[0].match(/^#+/)[0].length;
+    const section = body.split(new RegExp("^#{1," + depth + "}\\s+", "m"))[0] ?? "";
+    const cited = [...section.matchAll(/\bitems?\s+(\d+)/g)].map((match) => items.get(Number(match[1]))?.s).filter((s) => s !== void 0);
+    if (cited.some((s) => chapter.sourceStartSeconds > s)) problems.push({ chapter: index + 1, reason: "CHAPTER_START_AFTER_CITED_CONTENT" });
+  }
+  for (const note of [...notes, { file: summaryPath, text: summary }]) {
+    if (/应为|正确是/.test(note.text)) problems.push({ file: note.file, reason: "CORRECTION_REQUIRES_REVIEW" });
+  }
+  return {
+    valid: problems.length === 0,
+    chapterCount: headings.length,
+    problems,
+    limitation: "Source identity and chronology checks do not establish semantic support or transcription accuracy"
+  };
 }
 
 // src/agent/cli.ts
@@ -5597,6 +5644,7 @@ var help = `video-summarizer source CLI \u2014 Node.js >=22; no LLM API required
   prepare --video <URL|BV|av|YouTubeID> --out <new-directory>
   prepare --transcript <txt|json> --out <new-directory> [--title <title>]
   inspect --manifest <manifest.json> [--offset 0] [--limit 20]  Bounded manifest page
+  verify-summary --manifest <manifest.json> --summary <summary.md> --chapters <chapters.json>
   asr doctor                                      Check optional local transcription tools/model
   asr setup                                       Explicitly install missing tools/model only
 Options: --auth-file <path>, --chunk-tokens <128..16000; default 3000>,
@@ -5631,6 +5679,8 @@ async function main() {
     manifest: { type: "string" },
     offset: { type: "string" },
     limit: { type: "string" },
+    summary: { type: "string" },
+    chapters: { type: "string" },
     "caption-retries": { type: "string" },
     asr: { type: "string" },
     model: { type: "string" },
@@ -5647,7 +5697,7 @@ async function main() {
     console.log(help);
     return;
   }
-  const authFile = (0, import_node_path5.resolve)(values["auth-file"] ?? defaultAuthFile());
+  const authFile = (0, import_node_path6.resolve)(values["auth-file"] ?? defaultAuthFile());
   const controller = new AbortController();
   process.once("SIGINT", () => controller.abort());
   process.once("SIGTERM", () => controller.abort());
@@ -5674,7 +5724,7 @@ async function main() {
   } else if (positionals[0] === "auth") {
     switch (positionals[1]) {
       case "login":
-        result = await startLogin((0, import_node_path5.resolve)(required("out")));
+        result = await startLogin((0, import_node_path6.resolve)(required("out")));
         break;
       case "status":
         result = await checkSession(await readSession(authFile));
@@ -5689,14 +5739,14 @@ async function main() {
           });
           process.stdin.on("end", () => done(text));
           process.stdin.on("error", reject);
-        }) : await (0, import_promises6.readFile)(file, "utf8");
+        }) : await (0, import_promises7.readFile)(file, "utf8");
         result = await importSession(input, authFile);
         break;
       }
       case "poll": {
         const deadline = Date.now() + 18e4;
         do {
-          result = await pollLogin((0, import_node_path5.resolve)(required("state")), authFile);
+          result = await pollLogin((0, import_node_path6.resolve)(required("state")), authFile);
           if (!values.wait || result.state === "authenticated") break;
           await new Promise((done) => setTimeout(done, 3e3));
         } while (Date.now() < deadline);
@@ -5706,11 +5756,16 @@ async function main() {
       default:
         throw new Error("UNKNOWN_AUTH_COMMAND");
     }
+  } else if (positionals[0] === "verify-summary") {
+    if (!values.manifest || !values.summary || !values.chapters) throw new Error("MISSING_SUMMARY_VERIFICATION_OPTIONS");
+    const verified = await verifySummary(values.manifest, values.summary, values.chapters);
+    result = verified;
+    if (!verified.valid) process.exitCode = 1;
   } else if (positionals[0] === "inspect") {
     if (!values.manifest) throw new Error("MISSING_OPTION: --manifest");
     const offset = Number(values.offset ?? 0), limit = Number(values.limit ?? 20);
     if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error("INVALID_MANIFEST_PAGE");
-    const manifest = JSON.parse(await (0, import_promises6.readFile)(values.manifest, "utf8"));
+    const manifest = JSON.parse(await (0, import_promises7.readFile)(values.manifest, "utf8"));
     if (manifest.version !== 1 || !Array.isArray(manifest.chunks)) throw new Error("INVALID_MANIFEST");
     const { chunks, ...metadata } = manifest;
     result = {
@@ -5723,7 +5778,7 @@ async function main() {
     if (!!values.video === !!values.transcript) throw new Error("PROVIDE_ONE_OF_VIDEO_OR_TRANSCRIPT");
     const out = required("out");
     try {
-      await (0, import_promises6.lstat)(out);
+      await (0, import_promises7.lstat)(out);
       throw new Error("OUTPUT_EXISTS: choose a new output directory");
     } catch (error) {
       if (error.code !== "ENOENT") throw error;
@@ -5735,7 +5790,7 @@ async function main() {
     let provenance;
     if (values.transcript) {
       transcript = await localTranscript(values.transcript, values.title);
-      provenance = { kind: "provided-transcript", file: (0, import_node_path5.resolve)(values.transcript) };
+      provenance = { kind: "provided-transcript", file: (0, import_node_path6.resolve)(values.transcript) };
     } else {
       const video = parseVideo(values.video, values.source);
       if (values.page) {
@@ -5763,7 +5818,7 @@ async function main() {
         } catch (error) {
           if (controller.signal.aborted || !(error instanceof SummarizeError) || error.code !== "CAPTIONS_INVALID" || attempt >= captionRetries) throw error;
           console.error(JSON.stringify({ progress: { stage: "caption-retry", attempt: attempt + 1, maxRetries: captionRetries, reason: "CAPTIONS_INVALID" } }));
-          await (0, import_promises7.setTimeout)(1e3, void 0, { signal: controller.signal });
+          await (0, import_promises8.setTimeout)(1e3, void 0, { signal: controller.signal });
         }
       }
       if (transcript.captionStatus === "absent" && !transcript.transcription) {

@@ -25,6 +25,6 @@
 
 章节定位在归并时保留每条要点的首个来源 item index、s 与短引文。按内容首次出现的时间安排章节；同一章包含明显更早内容时拆章或把章起点移到最早来源。章节时间不能用 map/块的起点、最后出现时间或主题标签代替。主题跨多段时给要点单独标出实际时间。
 
-最终写作后保存 chapters.json：每章记录 {heading, sourceItemIndex, sourceStartSeconds, sourceQuote}，来源对应该章最早要点的首个 item，短引文原样保留。通过程序逐章校验 index/s/引文与对应 chunk 一致，再有界读取章起点附近最多 3 个 item，判断引文支持首个要点及标题。程序匹配通过只能证明引用存在；语义不符时重新定位或拆章。逐章完成才交付。
+最终写作后保存 chapters.json：每章记录 {heading, sourceItemIndex, sourceStartSeconds, sourceQuote}，来源对应该章最早要点的首个 item，短引文原样保留。通过程序逐章校验 index/s/引文与对应 chunk 一致，再有界读取章起点附近最多 3 个 item，判断引文支持首个要点及标题。程序匹配通过只能证明引用存在；语义不符时重新定位或拆章。逐章完成才交付。正文要点保留 item 或 items 索引范围，便于核对章内最早来源。最后运行 `node "$SKILL_DIR/scripts/video-source.cjs" verify-summary --manifest "/absolute/job/manifest.json" --summary "/absolute/job/summary.md" --chapters "/absolute/job/chapters.json"`，返回 valid=true 后交付；失败则按 problems 修订并重跑。校验会拒绝晚于正文已引用 item 的章起点、错引文及确定纠错措辞，仍需人工检查引文是否支持标题/首条要点。无时间戳文稿省略章节时间及该时间校验，说明来源没有时间依据。
 
 单块可直接生成最终稿，不必创建无用的 map/reduce 层。多块完成时先用程序对比 manifest 中的 ID 与 map 文件名，确认首/中/尾均有依据，再抽查关键数字与时间戳。
