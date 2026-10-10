@@ -17,7 +17,17 @@ export function getCacheId(input: SummarizeInput): string {
   const prefix = options.showTimestamp ? 'timestamp-' : ''
   const language = options.outputLanguage ?? 'default'
   const detailLevel = options.detailLevel ?? 'default'
-  return `${prefix}${video.videoId}-${language}-${detailLevel}-${normalizeModelId(options.model)}`
+  const base = `${prefix}${video.videoId}-${language}-${detailLevel}-${normalizeModelId(options.model)}`
+  // Missing-transcript handling changes the output, so include it when the
+  // caller sets it. Left off when unset, keeping existing cache keys stable.
+  const extras: string[] = []
+  if (options.onMissingTranscript) {
+    extras.push(`missing-${options.onMissingTranscript}`)
+  }
+  if (options.minTranscriptTokens !== undefined) {
+    extras.push(`min-${options.minTranscriptTokens}`)
+  }
+  return extras.length > 0 ? `${base}-${extras.join('-')}` : base
 }
 
 /** A simple in-memory `CacheStore`. Not shared across processes. */

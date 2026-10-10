@@ -55,6 +55,24 @@ export interface SummarizeOptions {
   topP?: number
   frequencyPenalty?: number
   presencePenalty?: number
+  /**
+   * What to do when the video has no usable transcript (captions absent,
+   * description-only, or too thin).
+   *
+   * - `'degrade'` (default): return a short, explicitly-labelled grounded
+   *   summary built only from the title and description — never fabricated
+   *   chapters or timestamps.
+   * - `'throw'`: reject with a `SummarizeError` whose `code` is
+   *   `'NO_TRANSCRIPT'`.
+   */
+  onMissingTranscript?: 'degrade' | 'throw'
+  /**
+   * Minimum transcript size (estimated tokens, see `estimateTokens`) for the
+   * transcript to count as usable. A captioned transcript below this threshold
+   * is treated as missing. Defaults to 40; set `0` to disable the size check and
+   * only treat description-only transcripts as missing.
+   */
+  minTranscriptTokens?: number
   /** Abort signal forwarded to the LLM call. */
   signal?: AbortSignal
 }
@@ -103,8 +121,12 @@ export interface ChatMessage {
 
 /** One planned LLM call in a summarize request. */
 export interface BuiltPromptStage {
-  /** `single` = one final pass; `map` = per-segment summary; `reduce` = merge step. */
-  kind: 'single' | 'map' | 'reduce'
+  /**
+   * `single` = one final pass; `map` = per-segment summary; `reduce` = merge
+   * step; `grounded` = deterministic no-LLM fallback for a missing transcript
+   * (the `prompt` is the finished, labelled summary, not a prompt to send).
+   */
+  kind: 'single' | 'map' | 'reduce' | 'grounded'
   prompt: string
 }
 

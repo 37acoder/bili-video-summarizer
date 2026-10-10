@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createVideoSummarizer } from '../src/summarizer'
 import { SummarizeError } from '../src/errors'
 import { getByteLength } from '../src/transcript/small-size-transcripts'
-import type { FetchLike, LlmClient } from '../src/types'
+import type { FetchLike, LlmClient, TranscriptResult } from '../src/types'
 
 function jsonResponse(data: unknown): Response {
   return new Response(JSON.stringify(data), { headers: { 'content-type': 'application/json' } })
@@ -44,7 +44,18 @@ const youtubeRoutes: Route[] = [
   },
   {
     match: (url) => url.includes('/sub/1') && url.includes('ext=txt'),
-    handler: () => new Response('para one\r\n\r\npara two\r\n\r\npara three'),
+    // Long enough (well over the default min-transcript threshold) that these
+    // plumbing tests exercise the normal caption-backed outline path.
+    handler: () =>
+      new Response(
+        [
+          'para one introduces the demo video and states the central question',
+          'para two explains the background and defines the key terms used later',
+          'para three walks through the first example with concrete numbers',
+          'para four covers the second example and the common mistakes to avoid',
+          'para five summarises the conclusion and lists the actionable takeaways',
+        ].join('\r\n\r\n'),
+      ),
   },
 ]
 
@@ -297,5 +308,153 @@ describe('createVideoSummarizer', () => {
     expect(transcript.usedDescription).toBe(true)
     expect(transcript.transcriptText).toBe('the description')
     expect(transcript.transcriptText).not.toContain('别的视频内容')
+  })
+})
+
+describe('missing transcript handling', () => {
+  const descriptionOnly: TranscriptResult = {
+    title: '如何在中国合法造一把属于自己的枪',
+    videoId: 'BV1xx',
+    source: 'bilibili',
+    subtitlesArray: null,
+    descriptionText: '一条很短的简介。',
+    transcriptText: '一条很短的简介。',
+    usedDescription: true,
+  }
+
+  const captionBacked: TranscriptResult = {
+    title: 'A substantial talk',
+    videoId: 'vid',
+    source: 'youtube',
+    subtitlesArray: [
+      { text: 'This is a substantial caption track.', index: 0 },
+      { text: 'It runs for a while and contains several sentences of real content.', index: 1 },
+      { text: 'The estimated token count stays well above the default threshold.', index: 2 },
+    ],
+    transcriptText:
+      'This is a substantial caption track. It runs for a while and contains several sentences of real content. The estimated token count stays well above the default threshold.',
+    usedDescription: false,
+  }
+
+  const thinCaptions: TranscriptResult = {
+    ...captionBacked,
+    subtitlesArray: [{ text: 'tiny', index: 0 }],
+    transcriptText: 'tiny',
+  }
+
+  it('degrades a description-only transcript to a labelled grounded summary with no chapters', async () => {
+    const llm = fakeLlm('## 一句话总结\n### [00:00] 编造的章节')
+    const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
+
+    const summary = await summarizer.summarize({
+      video: { source: 'bilibili', videoId: 'BV1xx' },
+      transcript: descriptionOnly,
+    })
+
+    expect(summary).toContain('未获取到字幕')
+    expect(summary).toContain('一条很短的简介')
+    expect(summary).not.toMatch(/### \[/m)
+    expect(llm.generate).not.toHaveBeenCalled()
+  })
+
+  it('localises the grounded notice for English output', async () => {
+    const summarizer = createVideoSummarizer({ llmClient: fakeLlm(), cache: false })
+
+    const summary = await summarizer.summarize({
+      video: { source: 'bilibili', videoId: 'BV1xx' },
+      options: { outputLanguage: 'en-US' },
+      transcript: descriptionOnly,
+    })
+
+    expect(summary).toContain('No captions were available')
+    expect(summary).not.toMatch(/### \[/m)
+  })
+
+  it('streams the grounded summary for a description-only transcript', async () => {
+    const llm = fakeLlm()
+    const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
+
+    let out = ''
+    for await (const chunk of await summarizer.summarizeStream({
+      video: { source: 'bilibili', videoId: 'BV1xx' },
+      transcript: descriptionOnly,
+    })) {
+      out += chunk
+    }
+
+    expect(out).toContain('未获取到字幕')
+    expect(out).not.toMatch(/### \[/m)
+    expect(llm.generate).not.toHaveBeenCalled()
+  })
+
+  it("throws SummarizeError code NO_TRANSCRIPT for 'throw' with a below-threshold transcript", async () => {
+    const summarizer = createVideoSummarizer({ llmClient: fakeLlm(), cache: false })
+
+    await expect(
+      summarizer.summarize({
+        video: { source: 'bilibili', videoId: 'thin' },
+        options: { onMissingTranscript: 'throw', minTranscriptTokens: 100 },
+        transcript: thinCaptions,
+      }),
+    ).rejects.toMatchObject({ code: 'NO_TRANSCRIPT', statusCode: 501 })
+  })
+
+  it('honours the summarizer-level onMissingTranscript default', async () => {
+    const summarizer = createVideoSummarizer({
+      llmClient: fakeLlm(),
+      cache: false,
+      onMissingTranscript: 'throw',
+    })
+
+    await expect(
+      summarizer.summarize({ video: { source: 'bilibili', videoId: 'BV1xx' }, transcript: descriptionOnly }),
+    ).rejects.toMatchObject({ code: 'NO_TRANSCRIPT' })
+  })
+
+  it('makes the thin-transcript threshold configurable', async () => {
+    const llm = fakeLlm('the outline')
+    const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
+
+    const degraded = await summarizer.summarize({
+      video: { source: 'youtube', videoId: 'thin' },
+      options: { minTranscriptTokens: 100 },
+      transcript: thinCaptions,
+    })
+    expect(degraded).toContain('未获取到字幕')
+
+    const withSizeCheckDisabled = await summarizer.summarize({
+      video: { source: 'youtube', videoId: 'thin' },
+      options: { minTranscriptTokens: 0 },
+      transcript: thinCaptions,
+    })
+    expect(withSizeCheckDisabled).toBe('the outline')
+    expect(llm.generate).toHaveBeenCalledTimes(1)
+  })
+
+  it('still produces the chaptered outline for a caption-backed video', async () => {
+    const llm = fakeLlm('## 一句话总结\n### [00:12] 章节')
+    const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
+
+    const summary = await summarizer.summarize({
+      video: { source: 'youtube', videoId: 'vid' },
+      transcript: captionBacked,
+    })
+
+    expect(summary).toContain('### [00:12]')
+    expect(llm.generate).toHaveBeenCalledTimes(1)
+  })
+
+  it('exposes a grounded stage from buildPrompt without calling the LLM', async () => {
+    const llm = fakeLlm()
+    const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
+
+    const built = await summarizer.buildPrompt({
+      video: { source: 'bilibili', videoId: 'BV1xx' },
+      transcript: descriptionOnly,
+    })
+
+    expect(built.stages?.map((stage) => stage.kind)).toEqual(['grounded'])
+    expect(built.prompt).toContain('未获取到字幕')
+    expect(llm.generate).not.toHaveBeenCalled()
   })
 })

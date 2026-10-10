@@ -52,6 +52,15 @@ export type {
   MapReduceTranscript,
 } from './summarize/map-reduce'
 
+// Missing-transcript handling (grounded fallback)
+export {
+  isMissingTranscript,
+  buildGroundedTranscriptSummary,
+  DEFAULT_MIN_TRANSCRIPT_TOKENS,
+  MISSING_TRANSCRIPT_NOTICE,
+} from './summarize/missing-transcript'
+export type { MissingTranscriptPolicy } from './summarize/missing-transcript'
+
 // Token estimation
 export { estimateTokens } from './utils/tokens'
 

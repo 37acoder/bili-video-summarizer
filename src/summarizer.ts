@@ -34,6 +34,12 @@ import {
   transcriptDurationSeconds,
   type MapReduceDeps,
 } from './summarize/map-reduce'
+import {
+  buildGroundedTranscriptSummary,
+  DEFAULT_MIN_TRANSCRIPT_TOKENS,
+  isMissingTranscript,
+  type MissingTranscriptPolicy,
+} from './summarize/missing-transcript'
 import { fetchTranscript } from './subtitles'
 import type {
   BuiltPrompt,
@@ -64,6 +70,16 @@ export interface VideoSummarizerOptions {
   fetch?: FetchLike
   /** Whether a (paid) user API key is in use; affects default max tokens. */
   hasUserKey?: boolean
+  /**
+   * Default handling for a missing/too-thin transcript, overridable per request
+   * via `options.onMissingTranscript`. Defaults to `'degrade'`.
+   */
+  onMissingTranscript?: MissingTranscriptPolicy
+  /**
+   * Default minimum usable transcript size in estimated tokens, overridable per
+   * request via `options.minTranscriptTokens`. Defaults to 40.
+   */
+  minTranscriptTokens?: number
 }
 
 export interface VideoSummarizer {
@@ -134,9 +150,20 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
   const client: LlmClient = options.llmClient ?? createOpenAICompatibleClient(options.llm, logger)
   const cache: CacheStore | false = options.cache ?? createMemoryCache()
   const hasUserKey = options.hasUserKey ?? Boolean(options.llm?.apiKey)
+  const defaultMissingPolicy: MissingTranscriptPolicy = options.onMissingTranscript ?? 'degrade'
+  const defaultMinTranscriptTokens = options.minTranscriptTokens ?? DEFAULT_MIN_TRANSCRIPT_TOKENS
 
   function cacheKey(input: SummarizeInput): string {
     return getCacheId(input)
+  }
+
+  function resolveMissingPolicy(input: SummarizeInput): MissingTranscriptPolicy {
+    return input.options?.onMissingTranscript ?? defaultMissingPolicy
+  }
+
+  function resolveMinTranscriptTokens(input: SummarizeInput): number {
+    const value = input.options?.minTranscriptTokens
+    return typeof value === 'number' && Number.isFinite(value) ? value : defaultMinTranscriptTokens
   }
 
   async function fetchTranscriptFor(input: SummarizeInput): Promise<TranscriptResult> {
@@ -152,6 +179,11 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
     model: string
     maxOutputTokens: number
     deps: MapReduceDeps
+    /**
+     * Deterministic grounded fallback for a missing/too-thin transcript. When
+     * set, the caller must return it verbatim instead of calling the LLM.
+     */
+    grounded?: string
   }
 
   async function resolveRequest(input: SummarizeInput): Promise<ResolvedRequest> {
@@ -168,6 +200,18 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
     ) {
       logger.error('No subtitle in the video: ', video.videoId)
       throw new SummarizeError(501, 'NO_TRANSCRIPT', 'No subtitle in the video')
+    }
+
+    // A description-only or too-thin transcript never reaches the chaptered
+    // outline: either the caller asked for a throw, or we return a grounded,
+    // explicitly-labelled fallback that cannot fabricate chapters/timestamps.
+    let grounded: string | undefined
+    if (isMissingTranscript(transcript, resolveMinTranscriptTokens(input))) {
+      if (resolveMissingPolicy(input) === 'throw') {
+        logger.error('No usable transcript in the video: ', video.videoId)
+        throw new SummarizeError(501, 'NO_TRANSCRIPT', 'No usable transcript in the video')
+      }
+      grounded = buildGroundedTranscriptSummary(transcript, input.options)
     }
 
     const model = resolveModel(input)
@@ -203,12 +247,28 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       signal: input.options?.signal,
       logger,
     }
-    return { transcript, model, maxOutputTokens, deps }
+    return { transcript, model, maxOutputTokens, deps, grounded }
   }
 
   async function buildPrompt(input: SummarizeInput): Promise<BuiltPrompt> {
-    const { transcript, model, maxOutputTokens, deps } = await resolveRequest(input)
+    const { transcript, model, maxOutputTokens, deps, grounded } = await resolveRequest(input)
     const { video } = input
+
+    // No LLM call is made for a missing transcript; expose the deterministic
+    // grounded result under a dedicated `grounded` stage instead of a prompt.
+    if (grounded !== undefined) {
+      return {
+        videoId: video.videoId,
+        source: video.source,
+        title: transcript.title,
+        model,
+        messages: [{ role: 'user', content: grounded }],
+        prompt: grounded,
+        maxOutputTokens,
+        chunks: 1,
+        stages: [{ kind: 'grounded', prompt: grounded }],
+      }
+    }
 
     const chunks = resolveTranscriptChunks(transcript, deps)
     let stages: BuiltPromptStage[]
@@ -257,9 +317,9 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       }
     }
 
-    const { transcript, deps } = await resolveRequest(input)
-    const { summary } = await summarizeMapReduce(transcript, deps)
-    const result = trimResult(summary)
+    const { transcript, deps, grounded } = await resolveRequest(input)
+    const result =
+      grounded !== undefined ? grounded : trimResult((await summarizeMapReduce(transcript, deps)).summary)
 
     if (cache) {
       try {
@@ -281,8 +341,9 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       }
     }
 
-    const { transcript, deps } = await resolveRequest(input)
-    const source = await summarizeMapReduceStream(transcript, deps)
+    const { transcript, deps, grounded } = await resolveRequest(input)
+    const source =
+      grounded !== undefined ? singleChunk(grounded) : await summarizeMapReduceStream(transcript, deps)
     return streamWithCache(source, key, cache, logger)
   }
 

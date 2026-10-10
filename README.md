@@ -16,9 +16,12 @@ video request
 ```
 
 It contains **no video/audio understanding** — the model only ever sees the
-captions (or, as a fallback, the video description). The value of this module is
-the caption extraction, the prompt template, and the plumbing, all extracted so
-it can be embedded in another project (Next.js route, worker, CLI, ...).
+captions (or, as a fallback, the video description). When captions cannot be
+obtained and the description is too thin, the module returns an explicitly
+labelled grounded fallback rather than prompting the model with it (see
+[Missing transcripts](#missing-transcripts)). The value of this module is the
+caption extraction, the prompt template, and the plumbing, all extracted so it
+can be embedded in another project (Next.js route, worker, CLI, ...).
 
 > Extracted from BibiGPT-v1 (GPL-3.0). Upstream attribution is preserved in the
 > ported files — see `NOTICE`. This module is therefore also GPL-3.0-only.
@@ -83,6 +86,12 @@ const transcript = await summarizer.fetchTranscript({ video: { source: 'youtube'
 plus `summaryFormat`, `maxOutputTokens`, `reasoningEffort`, sampling params and
 an `AbortSignal`.
 
+Two options control what happens when there is no usable transcript:
+`onMissingTranscript` (`'degrade'` | `'throw'`, default `'degrade'`) and
+`minTranscriptTokens` (default `40`). Both can also be set as defaults on
+`createVideoSummarizer`, and per-request values override them. See
+[Missing transcripts](#missing-transcripts).
+
 ### Summary format
 
 The default output is a **chaptered outline** whose length adapts to the video:
@@ -107,6 +116,39 @@ The default output is a **chaptered outline** whose length adapts to the video:
 - For long transcripts the same outline is produced via map-reduce: segments are
   summarized, then a rolling reduce merges them (chapter count computed from the
   full transcript, seam subtitles preserved).
+
+### Missing transcripts
+
+A transcript is **missing** when the captions are absent (so the module fell back
+to the description, `usedDescription === true`) or when the available text is
+**too thin** — fewer than `minTranscriptTokens` estimated tokens (default `40`,
+using the same `estimateTokens` approximation as the chunker). A one-line
+description is far below that; a real caption track comfortably exceeds it.
+
+The chaptered-outline prompt is never fed a missing/too-thin transcript, because
+doing so makes the model invent confident chapters and `[00:00]` timestamps from
+the title alone. Instead:
+
+- `onMissingTranscript: 'degrade'` (default) returns a deterministic, no-LLM
+  fallback that is explicitly labelled, e.g.
+
+  ```
+  ⚠️ 未获取到字幕，以下仅依据标题与简介整理，可能不完整。
+
+  标题：<title>
+
+  简介：<description>
+  ```
+
+  The notice is localised (`zh`/`en`); the body is the description (or the thin
+  captions) verbatim, so no content can be fabricated. There are no
+  `### [mm:ss]` chapter headings.
+- `onMissingTranscript: 'throw'` rejects with a `SummarizeError` whose `code` is
+  `'NO_TRANSCRIPT'`.
+
+Set `minTranscriptTokens: 0` to disable the size check (only description-only
+transcripts then count as missing). A video with neither captions nor a
+description always throws `'NO_TRANSCRIPT'`, whatever the policy.
 
 ### Injection points
 
@@ -173,6 +215,13 @@ Falls back to these when not passed in code — see `.env.example`.
   timestamp against the video duration and retries up to 8 times. When nothing
   matches, it degrades to the video description — it never summarizes a
   mismatched (wrong-video) caption file (upstream trusted the first response).
+- **No fabricated chapters for missing transcripts.** When the transcript is
+  description-only or too thin (below `minTranscriptTokens`), the chaptered
+  outline is skipped and a deterministic, explicitly-labelled grounded fallback
+  is returned (or `SummarizeError: 'NO_TRANSCRIPT'` when
+  `onMissingTranscript: 'throw'`). Upstream (and this module before this change)
+  prompted the model with the thin text and the title, which produced invented
+  chapters and `[00:00]` timestamps.
 - `SummarizeInput.transcript` lets callers pass a pre-fetched transcript so
   captions are only extracted once per request.
 - **Map-reduce instead of random truncation.** Upstream dropped transcript lines
@@ -198,7 +247,12 @@ Falls back to these when not passed in code — see `.env.example`.
 ## Notes & limitations
 
 - Summaries are only as good as the captions. Silent videos fall back to the
-  description; videos with neither throw `SummarizeError` with `code: 'NO_TRANSCRIPT'`.
+  description; a description-only or too-thin transcript is **not** summarized as
+  a chaptered outline (that produced fabricated chapters/timestamps). It degrades
+  to an explicitly-labelled, deterministic grounded summary, or throws
+  `SummarizeError` with `code: 'NO_TRANSCRIPT'` when
+  `onMissingTranscript: 'throw'`. Videos with neither captions nor a description
+  always throw `'NO_TRANSCRIPT'`. See [Missing transcripts](#missing-transcripts).
 - **Token counting is an estimate.** There is no tokenizer dependency; CJK
   characters are counted at 1 token each and other text at ~4 characters per
   token (`estimateTokens`). The estimate errs high for CJK, so a segment never
