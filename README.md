@@ -1,4 +1,4 @@
-# video-summarizer
+# bili-video-summarizer
 
 A small, framework-agnostic TypeScript module that summarizes YouTube / Bilibili
 videos the same way [BibiGPT-v1](https://github.com/JimmyLv/BibiGPT) does:
@@ -40,7 +40,7 @@ Runtime dependencies: `ai` and `@ai-sdk/openai-compatible` (the Vercel AI SDK).
 ## Quick start
 
 ```ts
-import { createVideoSummarizer } from 'video-summarizer'
+import { createVideoSummarizer } from 'bili-video-summarizer'
 
 const summarizer = createVideoSummarizer({
   llm: {

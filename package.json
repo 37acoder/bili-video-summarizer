@@ -1,5 +1,5 @@
 {
-  "name": "video-summarizer",
+  "name": "bili-video-summarizer",
   "version": "0.1.0",
   "description": "Framework-agnostic module that summarizes YouTube/Bilibili videos by extracting captions and prompting an OpenAI-compatible LLM. Extracted from BibiGPT-v1.",
   "type": "module",
