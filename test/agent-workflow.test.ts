@@ -100,4 +100,59 @@ describe('Agent source workflows (no LLM)', () => {
     await writeFile(join(dir, 'description.json'), JSON.stringify({ ...transcript, usedDescription: true }))
     await expect(run(process.execPath, [script, 'prepare', '--transcript', join(dir, 'description.json'), '--out', join(dir, 'bad')], { cwd: dir })).rejects.toMatchObject({ code: 1 })
   })
+
+  it('retries invalid captions in one foreground CLI, preserves output, and stops at the configured bound', async () => {
+    const dir = await temp(), script = join(process.cwd(), 'skills/video-summarizer/scripts/video-source.cjs')
+    const preload = join(dir, 'fetch.mjs'), record = join(dir, 'calls.json'), broken = join(dir, 'asr.json')
+    await writeFile(broken, '{broken')
+    await writeFile(preload, `import {writeFileSync} from 'node:fs';
+let views=0;const r=x=>new Response(JSON.stringify(x));
+globalThis.fetch=async url=>{
+ const path=String(url);
+ if(path.includes('/nav'))return r({code:0,data:{isLogin:true}});
+ if(path.includes('/view')){views++;writeFileSync(${JSON.stringify(record)},JSON.stringify({views}));
+  return r({code:0,data:views===1||process.env.TEST_ALWAYS_INVALID?{title:'invalid'}:{aid:1,title:'fixture',pages:[{page:1,cid:11,duration:20}]}});}
+ if(path.includes('/player'))return r({code:0,data:{subtitle:{subtitles:[{lan:'zh-CN',subtitle_url:'https://caption.test/file'}]}}});
+ return r({body:[{from:0,content:'开头条件'.repeat(100)},{from:19,content:'最后结论'}]});
+};`)
+    const args = ['--import', preload, script, 'prepare', '--video', 'BV12ftJ6rEkw', '--caption-retries', '2', '--asr', 'local', '--asr-config', broken]
+    const env = { PATH: process.env.PATH, BILIBILI_SESSION_TOKEN: 'fixture-session' }
+    const output = join(dir, 'out')
+    const success = await run(process.execPath, [...args, '--out', output], { cwd: dir, env })
+    expect(JSON.parse(success.stdout).usedDescription).toBe(false)
+    expect(success.stderr.match(/caption-retry/g)).toHaveLength(1)
+    expect(JSON.parse(await readFile(record, 'utf8')).views).toBe(2)
+    const manifest = await readFile(join(output, 'manifest.json'), 'utf8')
+    await expect(run(process.execPath, [...args, '--out', output], { cwd: dir, env })).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('OUTPUT_EXISTS') })
+    expect(await readFile(join(output, 'manifest.json'), 'utf8')).toBe(manifest)
+    const failedOut = join(dir, 'failed')
+    await expect(run(process.execPath, [...args, '--out', failedOut], { cwd: dir, env: { ...env, TEST_ALWAYS_INVALID: '1' } })).rejects.toMatchObject({ code: 1, stderr: expect.stringContaining('CAPTIONS_INVALID') })
+    expect(JSON.parse(await readFile(record, 'utf8')).views).toBe(3)
+    await expect(stat(failedOut)).rejects.toMatchObject({ code: 'ENOENT' })
+    expect(await readFile(broken, 'utf8')).toBe('{broken')
+  })
+
+  it('does not retry HTTP, caption JSON, auth or cancellation failures and keeps absence distinct', async () => {
+    const dir = await temp(), script = join(process.cwd(), 'skills/video-summarizer/scripts/video-source.cjs')
+    const preload = join(dir, 'fetch.mjs'), record = join(dir, 'calls.json')
+    await writeFile(preload, `import {writeFileSync} from 'node:fs';
+let views=0;const mode=process.env.TEST_MODE,r=x=>new Response(JSON.stringify(x));
+globalThis.fetch=async url=>{
+ const path=String(url);
+ if(path.includes('/nav'))return r({code:mode==='auth'?-101:0,data:{isLogin:mode!=='auth'}});
+ if(path.includes('/view')){views++;writeFileSync(${JSON.stringify(record)},JSON.stringify({views}));
+  if(mode==='cancel'){setTimeout(()=>process.kill(process.pid,'SIGINT'),50);return r({code:0,data:{title:'invalid'}});}
+  return r({code:0,data:{aid:1,title:'fixture',pages:[{page:1,cid:11,duration:20}]}});}
+ if(path.includes('/player'))return r({code:0,data:{subtitle:{subtitles:mode==='absent'?[]:[{lan:'zh-CN',subtitle_url:'https://caption.test/file'}]}}});
+ return mode==='http'?new Response('',{status:403}):new Response('{broken');
+};`)
+    for (const [mode, error] of [['http', 'UPSTREAM'], ['json', 'INVALID_JSON'], ['auth', 'AUTH_INVALID'], ['cancel', 'Abort'], ['absent', 'NO_TRANSCRIPT']] as const) {
+      const out = join(dir, mode)
+      await expect(run(process.execPath, ['--import', preload, script, 'prepare', '--video', 'BV12ftJ6rEkw', '--out', out, '--caption-retries', '3'], {
+        cwd: dir, env: { PATH: process.env.PATH, BILIBILI_SESSION_TOKEN: 'fixture-session', TEST_MODE: mode },
+      })).rejects.toMatchObject({ code: 1, stderr: expect.stringMatching(new RegExp(error, 'i')) })
+      if (mode !== 'auth') expect(JSON.parse(await readFile(record, 'utf8')).views).toBe(1)
+      await expect(stat(out)).rejects.toMatchObject({ code: 'ENOENT' })
+    }
+  })
 })

@@ -17,7 +17,7 @@ description: 总结 B站、YouTube 视频或用户提供的转录，默认生成
    node "$SKILL_DIR/scripts/video-source.cjs" prepare --transcript '/absolute/transcript.txt' --title '原标题' --out '/absolute/new-job'
    ```
 
-   `--out` 必须是新目录且父目录存在。支持逐行txt及项目转录json；其他格式按安装说明规范化。完成标准：取得清单路径与块数，保留原来源、原标题及分P。
+   命令调用前读 [执行与恢复](references/execution.md)，等待进程完成并保留旧输出目录。`--out` 必须是新目录且父目录存在。支持逐行txt及项目转录json；其他格式按安装说明规范化。完成标准：取得清单路径与块数，保留原来源、原标题及分P。
 4. **无字幕分支**：仅在 `NO_TRANSCRIPT` 且 `reason=captions_absent` 时读 [本地转录](references/local-transcription.md)。环境齐全自动继续，缺依赖才按该文档披露并选择安装；复用已有授权和阶段缓存。HTTP、鉴权、解析、字幕身份异常或短字幕按实际错误处理。完成标准：取得有识别来源的清单，或明确仍缺文字依据。
 5. **分块理解**：先执行 `node "$SKILL_DIR/scripts/video-source.cjs" inspect --manifest '/absolute/job/manifest.json'`，沿 nextOffset 分页；只加载必要元数据和当前块。读 [文字证据与Map-Reduce](references/summarization.md)，完成全部文字块的笔记/归并。完整manifest及原转录由程序读取，字幕结束时间仅用于筛查，不能证明字幕身份或精确片长。简介替代字幕时停止内容总结。图文模式在最终写作前按图文流程融合视觉证据。完成标准：所有chunk有对应结果（单块直接理解除外），缺失范围单列，后续更正已传递到归并结果。
 6. **写作与交付**：图文模式按图文流程及所选模板完成文章；仅文字模式此时才读 [文字输出](references/text-summary.md)。标题逐字使用原标题；无标题本地录音沿用用户名称或文件名并说明来源。核对正文依据、实际时间、覆盖与转录疑点，返回成果文件及关键内容。图文遇到素材/读图限制时交付明确标注的降级结果，不声称观察过未读取的画面。

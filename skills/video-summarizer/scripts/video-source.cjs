@@ -5164,6 +5164,7 @@ var init_local = __esm({
 var import_node_util = require("node:util");
 var import_promises6 = require("node:fs/promises");
 var import_node_path5 = require("node:path");
+var import_promises7 = require("node:timers/promises");
 init_auth();
 
 // src/agent/prepare.ts
@@ -5464,21 +5465,15 @@ async function fetchBilibiliTranscript(videoId, pageNumber, shouldShowTimestamp,
     if (!subtitleUrl) {
       continue;
     }
-    let body;
-    try {
-      const subtitleResponse = await ctx.fetch(subtitleUrl, {
-        headers: {
-          "User-Agent": ctx.config.userAgent,
-          Referer: `https://www.bilibili.com/video/${videoId}/`
-        }
-      });
-      if (!subtitleResponse.ok) throw new SummarizeError(subtitleResponse.status, "UPSTREAM", `Bilibili captions HTTP ${subtitleResponse.status}`);
-      const subtitles = await subtitleResponse.json();
-      body = subtitles?.body;
-    } catch (error) {
-      ctx.logger.warn("subtitle download failed");
-      continue;
-    }
+    const subtitleResponse = await ctx.fetch(subtitleUrl, {
+      headers: {
+        "User-Agent": ctx.config.userAgent,
+        Referer: `https://www.bilibili.com/video/${videoId}/`
+      }
+    });
+    if (!subtitleResponse.ok) throw new SummarizeError(subtitleResponse.status, "UPSTREAM", `Bilibili captions HTTP ${subtitleResponse.status}`);
+    const subtitles = await subtitleResponse.json();
+    const body = subtitles?.body;
     if (!Array.isArray(body) || body.length === 0 || body.some((item) => typeof item.content !== "string" || !Number.isFinite(item.from) || item.from < 0)) {
       continue;
     }
@@ -5605,7 +5600,8 @@ var help = `video-summarizer source CLI \u2014 Node.js >=22; no LLM API required
   asr doctor                                      Check optional local transcription tools/model
   asr setup                                       Explicitly install missing tools/model only
 Options: --auth-file <path>, --chunk-tokens <128..16000; default 3000>,
-         --source <bilibili|youtube>, --page <positive integer>
+         --source <bilibili|youtube>, --page <positive integer>,
+         --caption-retries <0..3; default 0>  Bounded retries for CAPTIONS_INVALID only
 Local ASR: prepare --asr local; --model <small|medium>, --model-path <existing file>,
            --asr-language <auto|Whisper code>, --asr-cache-dir <path>, --asr-config <path>,
            --yt-dlp <path>, --ffmpeg <path>, --ffprobe <path>, --whisper-cli <path>
@@ -5616,6 +5612,7 @@ Existing output directories are rejected. Plain text is assumed to be a transcri
 JSON must have the repository's TranscriptResult shape. Captions are tried first.
 ASR is opt-in, runs locally only for explicit caption absence, and never installs.
 Setup uses existing Homebrew on macOS; other platforms require manual tools.
+Retries stay in the foreground and never reinterpret an error as caption absence.
 `;
 async function main() {
   const { values, positionals } = (0, import_node_util.parseArgs)({ allowPositionals: true, options: {
@@ -5634,6 +5631,7 @@ async function main() {
     manifest: { type: "string" },
     offset: { type: "string" },
     limit: { type: "string" },
+    "caption-retries": { type: "string" },
     asr: { type: "string" },
     model: { type: "string" },
     "model-path": { type: "string" },
@@ -5731,6 +5729,8 @@ async function main() {
       if (error.code !== "ENOENT") throw error;
     }
     if (values.asr && values.asr !== "local") throw new Error("INVALID_ASR: use local");
+    const captionRetries = Number(values["caption-retries"] ?? 0);
+    if (!Number.isInteger(captionRetries) || captionRetries < 0 || captionRetries > 3) throw new Error("INVALID_CAPTION_RETRIES: use 0..3");
     let transcript;
     let provenance;
     if (values.transcript) {
@@ -5746,21 +5746,31 @@ async function main() {
       const token = video.source === "bilibili" ? await readSession(authFile) : void 0;
       if (token) await checkSession(token, (url, init) => request(String(url), { ...init, signal: controller.signal }));
       const config = resolveSubtitleConfig({ bilibiliSessionTokens: token ? [token] : [] });
-      transcript = await fetchTranscriptWithLocal({ video, options: { showTimestamp: true, signal: controller.signal } }, config, {
-        config,
-        fetch: (url, init) => request(String(url), init),
-        logger: { debug() {
-        }, info() {
-        }, warn() {
-        }, error() {
-        } }
-      }, values.asr === "local" ? local : void 0);
+      for (let attempt = 0; ; attempt++) {
+        controller.signal.throwIfAborted();
+        try {
+          transcript = await fetchTranscriptWithLocal({ video, options: { showTimestamp: true, signal: controller.signal } }, config, {
+            config,
+            fetch: (url, init) => request(String(url), init),
+            logger: { debug() {
+            }, info() {
+            }, warn() {
+            }, error() {
+            } }
+          }, values.asr === "local" ? local : void 0);
+          if (transcript.captionStatus === "unusable") throw new SummarizeError(502, "CAPTIONS_INVALID", "Platform captions are invalid; retry or provide a transcript");
+          break;
+        } catch (error) {
+          if (controller.signal.aborted || !(error instanceof SummarizeError) || error.code !== "CAPTIONS_INVALID" || attempt >= captionRetries) throw error;
+          console.error(JSON.stringify({ progress: { stage: "caption-retry", attempt: attempt + 1, maxRetries: captionRetries, reason: "CAPTIONS_INVALID" } }));
+          await (0, import_promises7.setTimeout)(1e3, void 0, { signal: controller.signal });
+        }
+      }
       if (transcript.captionStatus === "absent" && !transcript.transcription) {
         const error = new SummarizeError(501, "NO_TRANSCRIPT", "No available platform captions");
         Object.assign(error, { reason: "captions_absent" });
         throw error;
       }
-      if (transcript.captionStatus === "unusable") throw new SummarizeError(502, "CAPTIONS_INVALID", "Platform captions are invalid; retry or provide a transcript");
       provenance = transcript.transcription ? { kind: "local-asr", ...transcript.transcription } : { kind: "platform-captions", ...video };
     }
     result = await prepareArtifacts(transcript, out, Number(values["chunk-tokens"] ?? 3e3), provenance);

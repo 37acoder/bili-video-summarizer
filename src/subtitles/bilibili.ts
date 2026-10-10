@@ -142,21 +142,17 @@ export async function fetchBilibiliTranscript(
       continue
     }
 
-    let body: BilibiliSubtitleItem[] | undefined
-    try {
-      const subtitleResponse = await ctx.fetch(subtitleUrl, {
-        headers: {
-          'User-Agent': ctx.config.userAgent,
-          Referer: `https://www.bilibili.com/video/${videoId}/`,
-        },
-      })
-      if (!subtitleResponse.ok) throw new SummarizeError(subtitleResponse.status, 'UPSTREAM', `Bilibili captions HTTP ${subtitleResponse.status}`)
-      const subtitles = (await subtitleResponse.json()) as BilibiliSubtitleFile
-      body = subtitles?.body
-    } catch (error) {
-      ctx.logger.warn('subtitle download failed')
-      continue
-    }
+    const subtitleResponse = await ctx.fetch(subtitleUrl, {
+      headers: {
+        'User-Agent': ctx.config.userAgent,
+        Referer: `https://www.bilibili.com/video/${videoId}/`,
+      },
+    })
+    // Transport and JSON failures retain their identity; only unusable caption
+    // content may participate in the bounded validation retry path.
+    if (!subtitleResponse.ok) throw new SummarizeError(subtitleResponse.status, 'UPSTREAM', `Bilibili captions HTTP ${subtitleResponse.status}`)
+    const subtitles = (await subtitleResponse.json()) as BilibiliSubtitleFile
+    const body = subtitles?.body
     if (!Array.isArray(body) || body.length === 0 || body.some(item => typeof item.content !== 'string' || !Number.isFinite(item.from) || item.from < 0)) {
       continue
     }

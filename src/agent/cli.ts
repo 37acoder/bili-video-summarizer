@@ -1,6 +1,7 @@
 import { parseArgs } from 'node:util'
 import { readFile, lstat } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { setTimeout as delay } from 'node:timers/promises'
 import { defaultAuthFile, startLogin, pollLogin, importSession, readSession, checkSession, request } from './auth'
 import { localTranscript, parseVideo, prepareArtifacts } from './prepare'
 import { resolveSubtitleConfig } from '../config'
@@ -20,7 +21,8 @@ const help = `video-summarizer source CLI — Node.js >=22; no LLM API required
   asr doctor                                      Check optional local transcription tools/model
   asr setup                                       Explicitly install missing tools/model only
 Options: --auth-file <path>, --chunk-tokens <128..16000; default 3000>,
-         --source <bilibili|youtube>, --page <positive integer>
+         --source <bilibili|youtube>, --page <positive integer>,
+         --caption-retries <0..3; default 0>  Bounded retries for CAPTIONS_INVALID only
 Local ASR: prepare --asr local; --model <small|medium>, --model-path <existing file>,
            --asr-language <auto|Whisper code>, --asr-cache-dir <path>, --asr-config <path>,
            --yt-dlp <path>, --ffmpeg <path>, --ffprobe <path>, --whisper-cli <path>
@@ -31,6 +33,7 @@ Existing output directories are rejected. Plain text is assumed to be a transcri
 JSON must have the repository's TranscriptResult shape. Captions are tried first.
 ASR is opt-in, runs locally only for explicit caption absence, and never installs.
 Setup uses existing Homebrew on macOS; other platforms require manual tools.
+Retries stay in the foreground and never reinterpret an error as caption absence.
 `
 
 async function main() {
@@ -40,6 +43,7 @@ async function main() {
     'auth-file': { type: 'string' }, video: { type: 'string' }, transcript: { type: 'string' },
     title: { type: 'string' }, 'chunk-tokens': { type: 'string' }, source: { type: 'string' }, page: { type: 'string' },
     manifest: { type: 'string' }, offset: { type: 'string' }, limit: { type: 'string' },
+    'caption-retries': { type: 'string' },
     asr: { type: 'string' }, model: { type: 'string' }, 'model-path': { type: 'string' },
     'asr-language': { type: 'string' }, 'asr-cache-dir': { type: 'string' }, 'asr-config': { type: 'string' },
     'yt-dlp': { type: 'string' }, ffmpeg: { type: 'string' }, ffprobe: { type: 'string' }, 'whisper-cli': { type: 'string' },
@@ -103,6 +107,8 @@ async function main() {
     try { await lstat(out); throw new Error('OUTPUT_EXISTS: choose a new output directory') }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error }
     if (values.asr && values.asr !== 'local') throw new Error('INVALID_ASR: use local')
+    const captionRetries = Number(values['caption-retries'] ?? 0)
+    if (!Number.isInteger(captionRetries) || captionRetries < 0 || captionRetries > 3) throw new Error('INVALID_CAPTION_RETRIES: use 0..3')
     let transcript
     let provenance: unknown
     if (values.transcript) {
@@ -119,15 +125,25 @@ async function main() {
       if (token) await checkSession(token, (url, init) => request(String(url), { ...init, signal: controller.signal }))
       const config = resolveSubtitleConfig({ bilibiliSessionTokens: token ? [token] : [] })
       // No LLM imports, credentials or requests on the preparation path.
-      transcript = await fetchTranscriptWithLocal({ video, options: { showTimestamp: true, signal: controller.signal } }, config, {
-        config, fetch: (url, init) => request(String(url), init),
-        logger: { debug() {}, info() {}, warn() {}, error() {} },
-      }, values.asr === 'local' ? local : undefined)
+      for (let attempt = 0; ; attempt++) {
+        controller.signal.throwIfAborted()
+        try {
+          transcript = await fetchTranscriptWithLocal({ video, options: { showTimestamp: true, signal: controller.signal } }, config, {
+            config, fetch: (url, init) => request(String(url), init),
+            logger: { debug() {}, info() {}, warn() {}, error() {} },
+          }, values.asr === 'local' ? local : undefined)
+          if (transcript.captionStatus === 'unusable') throw new SummarizeError(502, 'CAPTIONS_INVALID', 'Platform captions are invalid; retry or provide a transcript')
+          break
+        } catch (error) {
+          if (controller.signal.aborted || !(error instanceof SummarizeError) || error.code !== 'CAPTIONS_INVALID' || attempt >= captionRetries) throw error
+          console.error(JSON.stringify({ progress: { stage: 'caption-retry', attempt: attempt + 1, maxRetries: captionRetries, reason: 'CAPTIONS_INVALID' } }))
+          await delay(1000, undefined, { signal: controller.signal })
+        }
+      }
       if (transcript.captionStatus === 'absent' && !transcript.transcription) {
         const error = new SummarizeError(501, 'NO_TRANSCRIPT', 'No available platform captions')
         Object.assign(error, { reason: 'captions_absent' }); throw error
       }
-      if (transcript.captionStatus === 'unusable') throw new SummarizeError(502, 'CAPTIONS_INVALID', 'Platform captions are invalid; retry or provide a transcript')
       provenance = transcript.transcription ? { kind: 'local-asr', ...transcript.transcription } : { kind: 'platform-captions', ...video }
     }
     result = await prepareArtifacts(transcript, out, Number(values['chunk-tokens'] ?? 3000), provenance)
