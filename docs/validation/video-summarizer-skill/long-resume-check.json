@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-10",
+  "session_id": "ses_f12b6a7089204cce9262a3299a1d2b37",
+  "session_outcome": "succeeded",
+  "model": {
+    "id": "deepseek-v4.1-flash",
+    "providerID": "opencode-go"
+  },
+  "sourceBytes": 2415200,
+  "sourceLines": 9800,
+  "chunkCount": 323,
+  "maxFileTokens": 2999,
+  "completed": [
+    "0001",
+    "0002"
+  ],
+  "remainingCount": 321,
+  "nextChunkId": "0003",
+  "fullTranscriptLoaded": false,
+  "fullManifestLoaded": false,
+  "usedInspectPaging": true,
+  "fullSmallCheckpointRead": true,
+  "fullSummaryProduced": false,
+  "checkpointsConsistent": true,
+  "pendingRequests": 0,
+  "active": false,
+  "children": 0
+}

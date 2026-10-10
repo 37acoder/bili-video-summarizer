@@ -1,0 +1,25 @@
+# NOTICE
+
+This project is a derivative work of **BibiGPT-v1**
+(https://github.com/JimmyLv/BibiGPT), which is licensed under the
+**GNU General Public License v3.0** (see `LICENSE`).
+
+The following files contain code ported/adapted from BibiGPT-v1:
+
+- `src/subtitles/youtube.ts`        ← `lib/youtube/fetchYoutubeSubtitle*.ts`
+- `src/subtitles/bilibili.ts`       ← `lib/bilibili/fetchBilibiliSubtitle*.ts`
+- `src/subtitles/reduce-subtitle-timestamp.ts` ← `utils/reduceSubtitleTimestamp.ts`
+- `src/subtitles/index.ts`          ← `lib/fetchSubtitle.ts`
+- `src/transcript/small-size-transcripts.ts` ← `lib/openai/getSmallSizeTranscripts.ts`
+- `src/prompt/prompt.ts`            ← `lib/openai/prompt.ts`
+- `src/prompt/language.ts`          ← `utils/constants/language.ts`
+- `src/llm/openai-compatible.ts`    ← `lib/openai/fetchOpenAIResult.ts`, `trimOpenAiResult.ts`
+- `src/cache.ts`                    ← `utils/getCacheId.ts`
+- `src/summarizer.ts`               ← `lib/openai/buildSummarizeRequest.ts`
+
+`src/transcript/small-size-transcripts.ts` additionally derives from an MIT
+licensed snippet (Copyright (c) 2022 Kazuki Nakayashiki; modified work
+Copyright (c) 2023 Qixiang Zhu), whose notice is retained in the file header.
+
+Because BibiGPT-v1 is licensed under GPL-3.0, this derived work is distributed
+under the same license: **GPL-3.0-only**.

@@ -1,0 +1,102 @@
+{
+  "task": "Summarize transcript.txt into Chinese chapter notes titled 'Android voice assistant tutorial (caption sample)' using the video-summarizer skill CLI, no-subagent map/reduce.",
+  "skill": "/Users/polozhong/.codex/skills/video-summarizer/SKILL.md",
+  "workspace": "/tmp/video-skill-acceptance-Hthqw9/workspace",
+  "pwdVerification": {
+    "shellCwdLogical": "/tmp/video-skill-acceptance-Hthqw9/workspace",
+    "shellCwdPhysical": "/private/tmp/video-skill-acceptance-Hthqw9/workspace",
+    "PWD": "/tmp/video-skill-acceptance-Hthqw9/workspace",
+    "aligned": true,
+    "note": "On macOS /tmp is a symlink to /private/tmp; shell cwd (cd) and PWD both point at the same logical path /tmp/video-skill-acceptance-Hthqw9/workspace. Confirmed pwd == PWD."
+  },
+  "environment": {
+    "nodeVersion": "v22.22.2",
+    "nodeRequirement": ">=22",
+    "llmApiCalled": false
+  },
+  "commands": [
+    {
+      "purpose": "verify cwd/PWD and list workspace",
+      "command": "cd /tmp/video-skill-acceptance-Hthqw9/workspace && pwd -P && pwd && echo \"PWD=$PWD\" && ls -la",
+      "exitCode": 0
+    },
+    {
+      "purpose": "check node version and CLI help",
+      "command": "node --version && node \"/Users/polozhong/.codex/skills/video-summarizer/scripts/video-source.cjs\" --help",
+      "exitCode": 0
+    },
+    {
+      "purpose": "prepare transcript with forced multi-chunk budget",
+      "command": "node \"/Users/polozhong/.codex/skills/video-summarizer/scripts/video-source.cjs\" prepare --transcript '/tmp/video-skill-acceptance-Hthqw9/workspace/transcript.txt' --title 'Android voice assistant tutorial (caption sample)' --out '/tmp/video-skill-acceptance-Hthqw9/workspace/prepared' --chunk-tokens 1500",
+      "stdout": "{\"manifest\":\"/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/manifest.json\",\"chunkCount\":4,\"usedDescription\":false}",
+      "exitCode": 0
+    },
+    {
+      "purpose": "run CLI on description-only TranscriptResult JSON to verify it rejects summarization",
+      "command": "node \"/Users/polozhong/.codex/skills/video-summarizer/scripts/video-source.cjs\" prepare --transcript '/tmp/video-skill-acceptance-Hthqw9/workspace/description-only.json' --title 'Android voice assistant tutorial (description-only sample)' --out '/tmp/video-skill-acceptance-Hthqw9/workspace/prepared-desc' --chunk-tokens 1500",
+      "stdout": "{\"error\":\"NO_TRANSCRIPT: captions absent or too thin; provide a transcript, not a description\"}",
+      "exitCode": 1
+    },
+    {
+      "purpose": "verify manifest chunk IDs vs map files and item coverage",
+      "command": "node -e '<coverage script comparing manifest.json chunks to maps/*.md and union of chunk item indices>'",
+      "exitCode": 0
+    }
+  ],
+  "chunkCount": 4,
+  "chunkBudgetTokens": 1500,
+  "coveredIds": {
+    "chunks": ["0001", "0002", "0003", "0004"],
+    "mapFiles": ["0001", "0002", "0003", "0004"],
+    "allChunksMapped": true,
+    "itemIndexRange": "0–48",
+    "itemCount": 49,
+    "coveredItemCount": 49,
+    "missingItemIndices": []
+  },
+  "timestampChecks": {
+    "source": "item 's' fields in prepared/chunks/*.json",
+    "firstTimestamp": "0s (item 0) -> 00:00",
+    "lastTimestamp": "670.16s (item 48) -> 11:10; not asserted as exact video duration",
+    "chapterTimestampsTraceable": true
+  },
+  "missingTranscriptTest": {
+    "input": "/tmp/video-skill-acceptance-Hthqw9/workspace/description-only.json",
+    "shape": "{ title, source, videoId, usedDescription:true, transcriptText, subtitlesArray:null }",
+    "exitCode": 1,
+    "error": "NO_TRANSCRIPT: captions absent or too thin; provide a transcript, not a description",
+    "outputDirectoryCreated": false,
+    "rejected": true
+  },
+  "workflow": {
+    "mode": "no-subagent sequential map/reduce",
+    "chunksReadOneAtATime": true,
+    "mapsWritten": ["prepared/maps/0001.md", "prepared/maps/0002.md", "prepared/maps/0003.md", "prepared/maps/0004.md"],
+    "reduceWritten": ["prepared/reduce/level-1-group-1.md"],
+    "progressWritten": "prepared/progress.json",
+    "subagentsSpawned": false,
+    "backgroundTasksSpawned": false,
+    "networkAccessed": false,
+    "envOrCredentialsRead": false,
+    "sourceOrSkillFilesModified": false,
+    "expectedSampleSummariesRead": false,
+    "otherLlmApiCalled": false
+  },
+  "issues": [
+    "Transcript is machine-transcribed Chinese; many English proper nouns are ambiguous (e.g. deep code / deep sick harness / deep siharness / Depc harness -> likely DeepSeek harness; GBT6 -> likely GPT; rapper -> likely repo; AIA 制 / A 证 / AH -> likely agent; MIO 2.5 ASR/TDS; 阳股和重股; informative drawings model; DP 音). Flagged verbatim in summary.md '不确定与缺口'.",
+    "Wireless pairing example numbers 541800 (port) and 32981 (host device) come from ASR and may be imprecise.",
+    "No explicit on-screen corrections found; no self-correction needs to be reconciled.",
+    "Subtitle end time 670.16s is the last caption timestamp, not verified as the true video duration."
+  ],
+  "artifacts": {
+    "manifest": "/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/manifest.json",
+    "chunksDir": "/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/chunks/",
+    "mapsDir": "/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/maps/",
+    "reduce": "/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/reduce/level-1-group-1.md",
+    "progress": "/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/progress.json",
+    "summary": "/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/summary.md",
+    "descriptionOnlyInput": "/tmp/video-skill-acceptance-Hthqw9/workspace/description-only.json",
+    "validation": "/tmp/video-skill-acceptance-Hthqw9/workspace/validation.json"
+  },
+  "result": "PASS"
+}

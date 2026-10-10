@@ -1,0 +1,4 @@
+interface:
+  display_name: "视频字幕总结"
+  short_description: "提取 B站或 YouTube 字幕，由 Agent 分块总结，无需 LLM API"
+  default_prompt: "使用 $video-summarizer 提取视频字幕，按时间顺序生成有依据的章节总结。"

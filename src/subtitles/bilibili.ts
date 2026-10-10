@@ -14,6 +14,7 @@
 import { find, sample } from '../utils/fp'
 import { reduceBilibiliSubtitleTimestamp, type BilibiliSubtitleItem } from './reduce-subtitle-timestamp'
 import type { SubtitleFetchContext, SubtitleFetchResult } from './types'
+import { SummarizeError } from '../errors'
 
 interface BilibiliSubtitleMeta {
   lan: string
@@ -68,7 +69,9 @@ async function fetchViewInfo(videoId: string, ctx: SubtitleFetchContext): Promis
   const requestUrl = `https://api.bilibili.com/x/web-interface/view${params}`
   ctx.logger.debug('fetch', requestUrl)
   const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)))
-  const json = (await response.json()) as { data?: BilibiliViewInfo }
+  if (!response.ok) throw new SummarizeError(response.status, 'UPSTREAM', `Bilibili HTTP ${response.status}`)
+  const json = (await response.json()) as { code?: number; data?: BilibiliViewInfo }
+  if (json.code && json.code !== 0) throw new SummarizeError(502, 'UPSTREAM', `Bilibili view code ${json.code}`)
   return json?.data ?? {}
 }
 
@@ -81,7 +84,9 @@ async function fetchSubtitleList(
   const requestUrl = `https://api.bilibili.com/x/player/v2?aid=${aid}&cid=${cid}`
   ctx.logger.debug('fetch', requestUrl)
   const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)))
-  const json = (await response.json()) as { data?: { subtitle?: { subtitles?: BilibiliSubtitleMeta[] } } }
+  if (!response.ok) throw new SummarizeError(response.status, 'UPSTREAM', `Bilibili HTTP ${response.status}`)
+  const json = (await response.json()) as { code?: number; data?: { subtitle?: { subtitles?: BilibiliSubtitleMeta[] } } }
+  if (json.code && json.code !== 0) throw new SummarizeError(502, 'UPSTREAM', `Bilibili player code ${json.code}`)
   return json?.data?.subtitle?.subtitles ?? []
 }
 
@@ -110,6 +115,7 @@ export async function fetchBilibiliTranscript(
   }
 
   const matchedPage = hasPages ? find(pages ?? [], { page: Number(pageNumber || 1) }) : undefined
+  if (pageNumber != null && !matchedPage) throw new SummarizeError(400, 'UPSTREAM', 'Bilibili page does not exist')
   const cid = matchedPage?.cid ?? pages?.[0]?.cid
   if (!aid || !cid) {
     return { title, subtitlesArray: null, descriptionText }

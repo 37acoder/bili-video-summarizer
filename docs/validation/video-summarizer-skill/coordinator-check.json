@@ -1,0 +1,32 @@
+{
+  "session_id": "ses_fba4eb107a304f42aa10ea989cf05099",
+  "model": {
+    "id": "deepseek-v4.1-flash",
+    "providerID": "opencode-go"
+  },
+  "session_outcome": "succeeded",
+  "prompt_verified": true,
+  "pending_requests": 0,
+  "active": false,
+  "children": 0,
+  "chunk_count": 4,
+  "map_count": 4,
+  "item_count": 49,
+  "all_chunk_hashes_verified": true,
+  "all_items_covered": true,
+  "chapter_timestamps_verified": [
+    "00:00",
+    "00:38",
+    "01:23",
+    "02:07",
+    "03:05",
+    "03:32",
+    "04:18",
+    "05:32",
+    "07:22",
+    "08:33",
+    "09:34",
+    "10:28"
+  ],
+  "summary_file": "/tmp/video-skill-acceptance-Hthqw9/workspace/prepared/summary.md"
+}

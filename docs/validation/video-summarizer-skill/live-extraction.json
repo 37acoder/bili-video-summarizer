@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-10",
+  "sessionVerified": true,
+  "provenance": {
+    "kind": "platform-captions",
+    "source": "bilibili",
+    "videoId": "BV1KLhi6oEh5"
+  },
+  "title": "喂饭，让你的安卓手机或平板比Siri更Siri",
+  "usedDescription": false,
+  "chunkCount": 4,
+  "itemCount": 49,
+  "timestamped": true,
+  "chunkBudget": 1500,
+  "maxFileTokens": 1491,
+  "runtimeSha256": "2d3e39cdf6ce206136fd06abc9140689d845b72473134e13f6fdac3d12b67f0e",
+  "qrGenerateVerified": true,
+  "qrPollObserved": "waiting_for_scan",
+  "newQrScanCompleted": false
+}
