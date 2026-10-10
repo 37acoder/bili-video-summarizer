@@ -2,9 +2,16 @@ import { describe, expect, it } from 'vitest'
 import {
   buildGroundedTranscriptSummary,
   DEFAULT_MIN_TRANSCRIPT_TOKENS,
+  DEFAULT_MISSING_TRANSCRIPT_POLICY,
   isMissingTranscript,
   MISSING_TRANSCRIPT_NOTICE,
 } from '../src/summarize/missing-transcript'
+
+describe('DEFAULT_MISSING_TRANSCRIPT_POLICY', () => {
+  it('throws for a missing transcript by default', () => {
+    expect(DEFAULT_MISSING_TRANSCRIPT_POLICY).toBe('throw')
+  })
+})
 
 describe('isMissingTranscript', () => {
   it('treats a description-only transcript as missing regardless of length', () => {

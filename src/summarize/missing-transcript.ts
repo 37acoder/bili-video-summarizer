@@ -19,6 +19,12 @@ import { estimateTokens } from '../utils/tokens'
 export type MissingTranscriptPolicy = 'degrade' | 'throw'
 
 /**
+ * Default policy: missing subtitle info is an error, not a degraded summary.
+ * `'degrade'` is still available as an explicit opt-in.
+ */
+export const DEFAULT_MISSING_TRANSCRIPT_POLICY: MissingTranscriptPolicy = 'throw'
+
+/**
  * Default minimum transcript size (estimated tokens) for a transcript to count
  * as usable. A one-line description is far below this; a real caption track of
  * more than a few seconds is comfortably above it.

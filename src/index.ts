@@ -57,6 +57,7 @@ export {
   isMissingTranscript,
   buildGroundedTranscriptSummary,
   DEFAULT_MIN_TRANSCRIPT_TOKENS,
+  DEFAULT_MISSING_TRANSCRIPT_POLICY,
   MISSING_TRANSCRIPT_NOTICE,
 } from './summarize/missing-transcript'
 export type { MissingTranscriptPolicy } from './summarize/missing-transcript'

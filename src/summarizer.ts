@@ -37,6 +37,7 @@ import {
 import {
   buildGroundedTranscriptSummary,
   DEFAULT_MIN_TRANSCRIPT_TOKENS,
+  DEFAULT_MISSING_TRANSCRIPT_POLICY,
   isMissingTranscript,
   type MissingTranscriptPolicy,
 } from './summarize/missing-transcript'
@@ -72,7 +73,8 @@ export interface VideoSummarizerOptions {
   hasUserKey?: boolean
   /**
    * Default handling for a missing/too-thin transcript, overridable per request
-   * via `options.onMissingTranscript`. Defaults to `'degrade'`.
+   * via `options.onMissingTranscript`. Defaults to `'throw'`; set `'degrade'`
+   * to opt in to the deterministic grounded fallback.
    */
   onMissingTranscript?: MissingTranscriptPolicy
   /**
@@ -150,7 +152,8 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
   const client: LlmClient = options.llmClient ?? createOpenAICompatibleClient(options.llm, logger)
   const cache: CacheStore | false = options.cache ?? createMemoryCache()
   const hasUserKey = options.hasUserKey ?? Boolean(options.llm?.apiKey)
-  const defaultMissingPolicy: MissingTranscriptPolicy = options.onMissingTranscript ?? 'degrade'
+  const defaultMissingPolicy: MissingTranscriptPolicy =
+    options.onMissingTranscript ?? DEFAULT_MISSING_TRANSCRIPT_POLICY
   const defaultMinTranscriptTokens = options.minTranscriptTokens ?? DEFAULT_MIN_TRANSCRIPT_TOKENS
 
   function cacheKey(input: SummarizeInput): string {

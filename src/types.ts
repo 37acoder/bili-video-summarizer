@@ -59,11 +59,11 @@ export interface SummarizeOptions {
    * What to do when the video has no usable transcript (captions absent,
    * description-only, or too thin).
    *
-   * - `'degrade'` (default): return a short, explicitly-labelled grounded
-   *   summary built only from the title and description — never fabricated
-   *   chapters or timestamps.
-   * - `'throw'`: reject with a `SummarizeError` whose `code` is
+   * - `'throw'` (default): reject with a `SummarizeError` whose `code` is
    *   `'NO_TRANSCRIPT'`.
+   * - `'degrade'`: opt in to a short, explicitly-labelled grounded summary
+   *   built only from the title and description — never fabricated chapters or
+   *   timestamps.
    */
   onMissingTranscript?: 'degrade' | 'throw'
   /**

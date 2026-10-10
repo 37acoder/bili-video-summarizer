@@ -342,12 +342,35 @@ describe('missing transcript handling', () => {
     transcriptText: 'tiny',
   }
 
-  it('degrades a description-only transcript to a labelled grounded summary with no chapters', async () => {
+  it('throws NO_TRANSCRIPT by default for a description-only transcript', async () => {
+    const llm = fakeLlm('## 一句话总结\n### [00:00] 编造的章节')
+    const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
+
+    await expect(
+      summarizer.summarize({ video: { source: 'bilibili', videoId: 'BV1xx' }, transcript: descriptionOnly }),
+    ).rejects.toMatchObject({ code: 'NO_TRANSCRIPT', statusCode: 501 })
+    expect(llm.generate).not.toHaveBeenCalled()
+  })
+
+  it('throws NO_TRANSCRIPT by default for a below-threshold captioned transcript', async () => {
+    const summarizer = createVideoSummarizer({ llmClient: fakeLlm(), cache: false })
+
+    await expect(
+      summarizer.summarize({
+        video: { source: 'bilibili', videoId: 'thin' },
+        options: { minTranscriptTokens: 100 },
+        transcript: thinCaptions,
+      }),
+    ).rejects.toMatchObject({ code: 'NO_TRANSCRIPT', statusCode: 501 })
+  })
+
+  it("still supports 'degrade' as an explicit per-request opt-in", async () => {
     const llm = fakeLlm('## 一句话总结\n### [00:00] 编造的章节')
     const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
 
     const summary = await summarizer.summarize({
       video: { source: 'bilibili', videoId: 'BV1xx' },
+      options: { onMissingTranscript: 'degrade' },
       transcript: descriptionOnly,
     })
 
@@ -362,7 +385,7 @@ describe('missing transcript handling', () => {
 
     const summary = await summarizer.summarize({
       video: { source: 'bilibili', videoId: 'BV1xx' },
-      options: { outputLanguage: 'en-US' },
+      options: { outputLanguage: 'en-US', onMissingTranscript: 'degrade' },
       transcript: descriptionOnly,
     })
 
@@ -370,13 +393,14 @@ describe('missing transcript handling', () => {
     expect(summary).not.toMatch(/### \[/m)
   })
 
-  it('streams the grounded summary for a description-only transcript', async () => {
+  it('streams the grounded summary when degrade is opted into', async () => {
     const llm = fakeLlm()
     const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
 
     let out = ''
     for await (const chunk of await summarizer.summarizeStream({
       video: { source: 'bilibili', videoId: 'BV1xx' },
+      options: { onMissingTranscript: 'degrade' },
       transcript: descriptionOnly,
     })) {
       out += chunk
@@ -387,19 +411,21 @@ describe('missing transcript handling', () => {
     expect(llm.generate).not.toHaveBeenCalled()
   })
 
-  it("throws SummarizeError code NO_TRANSCRIPT for 'throw' with a below-threshold transcript", async () => {
-    const summarizer = createVideoSummarizer({ llmClient: fakeLlm(), cache: false })
+  it('honours the summarizer-level onMissingTranscript default', async () => {
+    const summarizer = createVideoSummarizer({
+      llmClient: fakeLlm(),
+      cache: false,
+      onMissingTranscript: 'degrade',
+    })
 
-    await expect(
-      summarizer.summarize({
-        video: { source: 'bilibili', videoId: 'thin' },
-        options: { onMissingTranscript: 'throw', minTranscriptTokens: 100 },
-        transcript: thinCaptions,
-      }),
-    ).rejects.toMatchObject({ code: 'NO_TRANSCRIPT', statusCode: 501 })
+    const summary = await summarizer.summarize({
+      video: { source: 'bilibili', videoId: 'BV1xx' },
+      transcript: descriptionOnly,
+    })
+    expect(summary).toContain('未获取到字幕')
   })
 
-  it('honours the summarizer-level onMissingTranscript default', async () => {
+  it("throws for a below-threshold transcript when the summarizer default is 'throw'", async () => {
     const summarizer = createVideoSummarizer({
       llmClient: fakeLlm(),
       cache: false,
@@ -407,7 +433,7 @@ describe('missing transcript handling', () => {
     })
 
     await expect(
-      summarizer.summarize({ video: { source: 'bilibili', videoId: 'BV1xx' }, transcript: descriptionOnly }),
+      summarizer.summarize({ video: { source: 'youtube', videoId: 'thin' }, transcript: thinCaptions }),
     ).rejects.toMatchObject({ code: 'NO_TRANSCRIPT' })
   })
 
@@ -417,7 +443,7 @@ describe('missing transcript handling', () => {
 
     const degraded = await summarizer.summarize({
       video: { source: 'youtube', videoId: 'thin' },
-      options: { minTranscriptTokens: 100 },
+      options: { minTranscriptTokens: 100, onMissingTranscript: 'degrade' },
       transcript: thinCaptions,
     })
     expect(degraded).toContain('未获取到字幕')
@@ -450,6 +476,7 @@ describe('missing transcript handling', () => {
 
     const built = await summarizer.buildPrompt({
       video: { source: 'bilibili', videoId: 'BV1xx' },
+      options: { onMissingTranscript: 'degrade' },
       transcript: descriptionOnly,
     })
 
