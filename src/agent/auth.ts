@@ -21,7 +21,7 @@ export async function privateJson(path: string, value: unknown) {
 }
 
 export async function request(url: string, init: RequestInit = {}, fetcher = fetch) {
-  const response = await fetcher(url, { ...init, signal: AbortSignal.timeout(20_000) })
+  const response = await fetcher(url, { ...init, signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(20_000)]) : AbortSignal.timeout(20_000) })
   if (!response.ok) throw new Error(`UPSTREAM_HTTP_${response.status}`)
   return response
 }

@@ -228,11 +228,11 @@ describe('createVideoSummarizer', () => {
       {
         match: (url) => url.includes('/x/web-interface/view'),
         handler: () =>
-          jsonResponse({ data: { title: 'Bili', desc: 'desc', dynamic: 'dyn', aid: 1, pages: [{ page: 1, cid: 2 }] } }),
+          jsonResponse({ code: 0, data: { title: 'Bili', desc: 'desc', dynamic: 'dyn', aid: 1, pages: [{ page: 1, cid: 2 }] } }),
       },
       {
         match: (url) => url.includes('/x/player/v2'),
-        handler: () => jsonResponse({ data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: '//x/sub.json' }] } } }),
+        handler: () => jsonResponse({ code: 0, data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: '//x/sub.json' }] } } }),
       },
       {
         match: (url) => url.includes('x/sub.json'),
@@ -255,7 +255,7 @@ describe('createVideoSummarizer', () => {
         match: (url) => url.includes('/x/web-interface/view'),
         handler: () =>
           jsonResponse({
-            data: { title: 'Bili', desc: 'desc', aid: 1, duration: 10, pages: [{ page: 1, cid: 2, duration: 10 }] },
+            code: 0, data: { title: 'Bili', desc: 'desc', aid: 1, duration: 10, pages: [{ page: 1, cid: 2, duration: 10 }] },
           }),
       },
       {
@@ -263,7 +263,7 @@ describe('createVideoSummarizer', () => {
         handler: () => {
           playerCall += 1
           const subtitleUrl = playerCall === 1 ? '//x/bad.json' : '//x/good.json'
-          return jsonResponse({ data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: subtitleUrl }] } } })
+          return jsonResponse({ code: 0, data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: subtitleUrl }] } } })
         },
       },
       {
@@ -290,12 +290,12 @@ describe('createVideoSummarizer', () => {
         match: (url) => url.includes('/x/web-interface/view'),
         handler: () =>
           jsonResponse({
-            data: { title: 'Bili', desc: 'the description', aid: 1, duration: 10, pages: [{ page: 1, cid: 2, duration: 10 }] },
+            code: 0, data: { title: 'Bili', desc: 'the description', aid: 1, duration: 10, pages: [{ page: 1, cid: 2, duration: 10 }] },
           }),
       },
       {
         match: (url) => url.includes('/x/player/v2'),
-        handler: () => jsonResponse({ data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: '//x/bad.json' }] } } }),
+        handler: () => jsonResponse({ code: 0, data: { subtitle: { subtitles: [{ lan: 'zh-CN', subtitle_url: '//x/bad.json' }] } } }),
       },
       {
         match: (url) => url.includes('x/bad.json'),

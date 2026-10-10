@@ -9,6 +9,7 @@
 import { find } from '../utils/fp'
 import { reduceYoutubeSubtitleTimestamp, type YoutubeSubtitleItem } from './reduce-subtitle-timestamp'
 import type { SubtitleFetchContext, SubtitleFetchResult } from './types'
+import { SummarizeError } from '../errors'
 
 interface YoutubeSubtitleFormat {
   quality: string
@@ -39,8 +40,10 @@ async function fetchYoutubeSubtitleUrls(
       'X-Requested-With': 'xmlhttprequest',
     },
   })
-  const { response: json = {} } = (await response.json()) as SavesubsExtractResponse
-  return { title: json.title ?? '', subtitleList: json.formats ?? [] }
+  if (!response.ok) throw new SummarizeError(response.status, 'UPSTREAM', `YouTube captions HTTP ${response.status}`)
+  const { response: json } = (await response.json()) as SavesubsExtractResponse
+  if (!json || !Array.isArray(json.formats)) throw new SummarizeError(502, 'CAPTIONS_INVALID', 'Invalid YouTube caption list')
+  return { title: json.title ?? '', subtitleList: json.formats }
 }
 
 export async function fetchYoutubeTranscript(
@@ -50,7 +53,7 @@ export async function fetchYoutubeTranscript(
 ): Promise<SubtitleFetchResult> {
   const { title, subtitleList } = await fetchYoutubeSubtitleUrls(videoId, ctx)
   if (!subtitleList || subtitleList.length <= 0) {
-    return { title, subtitlesArray: null }
+    return { title, subtitlesArray: null, captionStatus: 'absent' }
   }
 
   const betterSubtitle =
@@ -60,22 +63,26 @@ export async function fetchYoutubeTranscript(
     subtitleList[0]
 
   if (!betterSubtitle) {
-    return { title, subtitlesArray: null }
+    return { title, subtitlesArray: null, captionStatus: 'unusable' }
   }
 
   if (shouldShowTimestamp) {
     const subtitleUrl = `${ctx.config.savesubsBaseUrl}${betterSubtitle.url}?ext=json`
     const response = await ctx.fetch(subtitleUrl)
+    if (!response.ok) throw new SummarizeError(response.status, 'UPSTREAM', `YouTube captions HTTP ${response.status}`)
     const subtitles = (await response.json()) as YoutubeSubtitleItem[]
-    return { title, subtitlesArray: reduceYoutubeSubtitleTimestamp(subtitles) }
+    if (!Array.isArray(subtitles) || subtitles.some(item => !Array.isArray(item.lines) || item.lines.some(line => typeof line !== 'string') || !Number.isFinite(item.start))) throw new SummarizeError(502, 'CAPTIONS_INVALID', 'Invalid YouTube captions')
+    const subtitlesArray = reduceYoutubeSubtitleTimestamp(subtitles)
+    return { title, subtitlesArray, captionStatus: subtitlesArray.length ? 'available' : 'unusable' }
   }
 
   const subtitleUrl = `${ctx.config.savesubsBaseUrl}${betterSubtitle.url}?ext=txt`
   const response = await ctx.fetch(subtitleUrl)
+  if (!response.ok) throw new SummarizeError(response.status, 'UPSTREAM', `YouTube captions HTTP ${response.status}`)
   const subtitles = await response.text()
   const subtitlesArray = subtitles
     .split('\r\n\r\n')
     .filter((text) => text.trim().length > 0)
     .map((text, index) => ({ text, index }))
-  return { title, subtitlesArray }
+  return { title, subtitlesArray, captionStatus: subtitlesArray.length ? 'available' : 'unusable' }
 }

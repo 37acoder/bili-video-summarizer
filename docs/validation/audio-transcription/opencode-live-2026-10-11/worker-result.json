@@ -1,0 +1,80 @@
+{
+  "status": "succeeded",
+  "output_dir": "/Users/polozhong/repos/video-summarizer/review/opencode-live-2026-10-11/job-eb335cb7/project/output",
+  "summary_path": "/Users/polozhong/repos/video-summarizer/review/opencode-live-2026-10-11/job-eb335cb7/project/output/summary.md",
+  "test_report_path": "/Users/polozhong/repos/video-summarizer/review/opencode-live-2026-10-11/job-eb335cb7/project/TEST-REPORT.md",
+  "video": {
+    "title": "2026像极了千禧年灾难前的1998！2027大崩盘真的要来了吗？能让你保命的一期！深度推演AI泡沫破裂时间线",
+    "url": "https://www.bilibili.com/video/BV12ftJ6rEkw/?p=1",
+    "videoId": "BV12ftJ6rEkw"
+  },
+  "source": "bilibili",
+  "page": 1,
+  "model": {
+    "asr_engine": "whisper.cpp",
+    "model": "ggml-small.bin",
+    "model_path": "/Users/polozhong/.cache/video-summarizer/models/ggml-small.bin",
+    "modelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+    "summarizer_llm": "opencode host model (default, unchanged)"
+  },
+  "language": {
+    "requested": "auto",
+    "detected": "zh"
+  },
+  "transcript_kind": "local-asr",
+  "platform_captions": "absent (NO_TRANSCRIPT / captions_absent); transient CAPTIONS_INVALID observed and retried",
+  "audio_duration_seconds": 2221.312,
+  "asr_time_seconds": {
+    "download_audio": 2.369,
+    "normalize_audio": 1.347,
+    "transcribe": 154.679,
+    "prepare_asr_loop_total": 172
+  },
+  "segments": 772,
+  "chunks": 11,
+  "all_maps_present": true,
+  "maps_written": ["0001","0002","0003","0004","0005","0006","0007","0008","0009","0010","0011"],
+  "reduce_groups": ["level-1-group-A (0001-0004)","level-1-group-B (0005-0008)","level-1-group-C (0009-0011)"],
+  "transcription_uncertainty": {
+    "head_s0_to_s500": [
+      "主持人自称‘小巫’、节目名‘东脱邦’（疑为转录错误）",
+      "‘高智凯’人名；标普500中AI占比‘大于45%’",
+      "'杰夫瑞公司'（疑为 Jefferies）",
+      "危机的 ‘6-12个月’ 与 ‘12-18个月’ 两种时间表述并存"
+    ],
+    "middle_s500_to_s1500": [
+      "'pat.com'（疑为 Pets.com）",
+      "'八轮周刊'（疑为 巴伦周刊 Barron's）",
+      "纳指最高点‘5048点62点’（应为 5048.62 点）",
+      "达里奥窗口‘2026年11月到2019年1月’（疑为 2029 年 1 月）",
+      "'PaperMillionning'/'Maritrade'/'加信' 等拼写或机构名"
+    ],
+    "tail_s1500_to_s2208": [
+      "'Bassbook' 研究机构名（疑为 Bespoke）",
+      "'The Globe'（疑为 TheGlobe.com）",
+      "高盛四巨头AI支出‘5.3万亿美元到2023年年底’（数字/年份存疑）",
+      "亚马逊股价‘113美元跌至5.5亿美元’（应为 5.5 美元）",
+      "'白经历'（疑为《白鲸》）、'招不保息'、'地球的主任' 等转录错误"
+    ]
+  },
+  "checks": {
+    "working_dir_verified": true,
+    "node_version": "v22.22.2",
+    "auth_status": "authenticated",
+    "asr_doctor_ready": true,
+    "asr_setup_run": false,
+    "tools": {"yt-dlp": true, "ffmpeg": true, "ffprobe": true, "whisper-cli": true},
+    "real_audio_download_executed": true,
+    "real_asr_executed": true,
+    "reused_old_stage_cache": false,
+    "manifest_map_one_to_one": true,
+    "summary_written": true,
+    "credentials_exposed": false
+  },
+  "not_measured": [
+    "视频画面、图表、字幕特效、语气（未获取，作为非观察事实处理）",
+    "外部数据（美债、GDP、估值、涨幅等）的真实性与原始出处未被独立验证",
+    "音频时长与转录时长匹配仅为异常筛查，不证明逐字准确",
+    "未对转录文本做人工逐字校对"
+  ]
+}

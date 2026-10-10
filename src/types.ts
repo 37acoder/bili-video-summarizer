@@ -95,6 +95,21 @@ export interface CommonSubtitleItem {
   index: number
   /** Start time in seconds. */
   s?: number | string
+  /** End time in seconds, retained for local ASR segments. */
+  e?: number
+}
+
+export type CaptionStatus = 'available' | 'absent' | 'unusable'
+export interface TranscriptionMetadata {
+  engine: 'whisper.cpp'
+  model: string
+  modelSha256: string
+  requestedLanguage: string
+  detectedLanguage?: string
+  audioDurationSeconds: number
+  audioSha256: string
+  source: VideoRequest
+  artifacts: { json: string; srt: string; text: string }
 }
 
 /** Result of the caption-extraction stage. */
@@ -110,6 +125,10 @@ export interface TranscriptResult {
   transcriptText: string
   /** Whether the description fallback was used instead of captions. */
   usedDescription: boolean
+  /** Platform caption state; only explicit absence permits local ASR. */
+  captionStatus?: CaptionStatus
+  media?: { cid?: number; durationSeconds?: number; pageNumber?: number }
+  transcription?: TranscriptionMetadata
 }
 
 export type ChatRole = 'system' | 'user' | 'assistant'

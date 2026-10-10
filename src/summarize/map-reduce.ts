@@ -67,6 +67,8 @@ export interface MapReduceDeps {
   >
   signal?: AbortSignal
   logger?: Logger
+  /** Source instruction carried into every map/reduce call for local ASR. */
+  transcriptionNotice?: string
 }
 
 export interface MapReduceResult {
@@ -116,7 +118,7 @@ export function transcriptDurationSeconds(items: CommonSubtitleItem[] | null | u
 function generateParams(prompt: string, deps: MapReduceDeps): GenerateParams {
   return {
     model: deps.model ?? DEFAULT_MODEL,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [{ role: 'user', content: deps.transcriptionNotice ? `${deps.transcriptionNotice}\n\n${prompt}` : prompt }],
     maxOutputTokens: deps.maxOutputTokens,
     reasoningEffort: deps.params?.reasoningEffort,
     temperature: deps.params?.temperature,

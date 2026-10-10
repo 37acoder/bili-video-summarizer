@@ -5,12 +5,24 @@ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __esm = (fn, res, err) => function __init() {
+  if (err) throw err[0];
+  try {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  } catch (e) {
+    throw err = [e], e;
+  }
+};
 var __commonJS = (cb, mod) => function __require() {
   try {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   } catch (e) {
     throw mod = 0, e;
   }
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -1307,11 +1319,11 @@ var require_dijkstra = __commonJS({
         var predecessors = {};
         var costs = {};
         costs[s] = 0;
-        var open = dijkstra.PriorityQueue.make();
-        open.push(s, 0);
+        var open3 = dijkstra.PriorityQueue.make();
+        open3.push(s, 0);
         var closest, u, v, cost_of_s_to_u, adjacent_nodes, cost_of_e, cost_of_s_to_u_plus_cost_of_e, cost_of_s_to_v, first_visit;
-        while (!open.empty()) {
-          closest = open.pop();
+        while (!open3.empty()) {
+          closest = open3.pop();
           u = closest.value;
           cost_of_s_to_u = closest.cost;
           adjacent_nodes = graph[u] || {};
@@ -1323,7 +1335,7 @@ var require_dijkstra = __commonJS({
               first_visit = typeof costs[v] === "undefined";
               if (first_visit || cost_of_s_to_v > cost_of_s_to_u_plus_cost_of_e) {
                 costs[v] = cost_of_s_to_u_plus_cost_of_e;
-                open.push(v, cost_of_s_to_u_plus_cost_of_e);
+                open3.push(v, cost_of_s_to_u_plus_cost_of_e);
                 predecessors[v] = u;
               }
             }
@@ -4410,10 +4422,10 @@ var require_browser = __commonJS({
           text = canvas;
           canvas = void 0;
         }
-        return new Promise(function(resolve3, reject) {
+        return new Promise(function(resolve4, reject) {
           try {
             const data = QRCode2.create(text, opts);
-            resolve3(renderFunc(data, canvas, opts));
+            resolve4(renderFunc(data, canvas, opts));
           } catch (e) {
             reject(e);
           }
@@ -4494,11 +4506,11 @@ var require_server = __commonJS({
     }
     function render(renderFunc, text, params) {
       if (!params.cb) {
-        return new Promise(function(resolve3, reject) {
+        return new Promise(function(resolve4, reject) {
           try {
             const data = QRCode2.create(text, params.opts);
             return renderFunc(data, params.opts, function(err, data2) {
-              return err ? reject(err) : resolve3(data2);
+              return err ? reject(err) : resolve4(data2);
             });
           } catch (e) {
             reject(e);
@@ -4562,20 +4574,14 @@ var require_lib = __commonJS({
   }
 });
 
-// src/agent/cli.ts
-var import_node_util = require("node:util");
-var import_promises3 = require("node:fs/promises");
-var import_node_path3 = require("node:path");
-
-// src/agent/auth.ts
-var import_promises = require("node:fs/promises");
-var import_node_path = require("node:path");
-var import_node_os = require("node:os");
-var import_node_crypto = require("node:crypto");
-var import_qrcode = __toESM(require_lib(), 1);
-
 // src/transcript/small-size-transcripts.ts
-var DEFAULT_TRANSCRIPT_BYTE_LIMIT = 6200;
+var DEFAULT_TRANSCRIPT_BYTE_LIMIT;
+var init_small_size_transcripts = __esm({
+  "src/transcript/small-size-transcripts.ts"() {
+    "use strict";
+    DEFAULT_TRANSCRIPT_BYTE_LIMIT = 6200;
+  }
+});
 
 // src/utils/env.ts
 function readEnv(key) {
@@ -4584,6 +4590,11 @@ function readEnv(key) {
   }
   return process.env[key];
 }
+var init_env = __esm({
+  "src/utils/env.ts"() {
+    "use strict";
+  }
+});
 
 // src/utils/fp.ts
 function sample(arr = []) {
@@ -4607,10 +4618,13 @@ function toStringArray(value) {
   }
   return value.split(",").filter(Boolean);
 }
+var init_fp = __esm({
+  "src/utils/fp.ts"() {
+    "use strict";
+  }
+});
 
 // src/config.ts
-var DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";
-var DEFAULT_SAVESUBS_BASE_URL = "https://savesubs.com";
 function resolveSubtitleConfig(config = {}) {
   return {
     savesubsBaseUrl: config.savesubsBaseUrl ?? readEnv("SAVESUBS_BASE_URL") ?? DEFAULT_SAVESUBS_BASE_URL,
@@ -4620,11 +4634,19 @@ function resolveSubtitleConfig(config = {}) {
     transcriptByteLimit: config.transcriptByteLimit ?? DEFAULT_TRANSCRIPT_BYTE_LIMIT
   };
 }
+var DEFAULT_USER_AGENT, DEFAULT_SAVESUBS_BASE_URL;
+var init_config = __esm({
+  "src/config.ts"() {
+    "use strict";
+    init_small_size_transcripts();
+    init_env();
+    init_fp();
+    DEFAULT_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36";
+    DEFAULT_SAVESUBS_BASE_URL = "https://savesubs.com";
+  }
+});
 
 // src/agent/auth.ts
-var defaultAuthFile = () => (0, import_node_path.join)((0, import_node_os.homedir)(), ".config", "video-summarizer", "bilibili.json");
-var passport = "https://passport.bilibili.com/x/passport-login/web/qrcode";
-var headers = { "User-Agent": DEFAULT_USER_AGENT, Referer: "https://www.bilibili.com/" };
 async function privateJson(path, value) {
   await (0, import_promises.mkdir)((0, import_node_path.dirname)(path), { recursive: true, mode: 448 });
   const temp = `${path}.${(0, import_node_crypto.randomUUID)()}.tmp`;
@@ -4636,7 +4658,7 @@ async function privateJson(path, value) {
   }
 }
 async function request(url, init = {}, fetcher = fetch) {
-  const response = await fetcher(url, { ...init, signal: AbortSignal.timeout(2e4) });
+  const response = await fetcher(url, { ...init, signal: init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(2e4)]) : AbortSignal.timeout(2e4) });
   if (!response.ok) throw new Error(`UPSTREAM_HTTP_${response.status}`);
   return response;
 }
@@ -4716,6 +4738,433 @@ async function pollLogin(stateFile, authFile, fetcher = fetch) {
   await (0, import_promises.rm)((0, import_node_path.join)((0, import_node_path.dirname)(stateFile), "login.png"), { force: true });
   return { state: "authenticated", ...result };
 }
+var import_promises, import_node_path, import_node_os, import_node_crypto, import_qrcode, defaultAuthFile, passport, headers;
+var init_auth = __esm({
+  "src/agent/auth.ts"() {
+    "use strict";
+    import_promises = require("node:fs/promises");
+    import_node_path = require("node:path");
+    import_node_os = require("node:os");
+    import_node_crypto = require("node:crypto");
+    import_qrcode = __toESM(require_lib(), 1);
+    init_config();
+    defaultAuthFile = () => (0, import_node_path.join)((0, import_node_os.homedir)(), ".config", "video-summarizer", "bilibili.json");
+    passport = "https://passport.bilibili.com/x/passport-login/web/qrcode";
+    headers = { "User-Agent": DEFAULT_USER_AGENT, Referer: "https://www.bilibili.com/" };
+  }
+});
+
+// src/errors.ts
+var SummarizeError;
+var init_errors = __esm({
+  "src/errors.ts"() {
+    "use strict";
+    SummarizeError = class extends Error {
+      statusCode;
+      code;
+      constructor(statusCode, code, message) {
+        super(message);
+        this.name = "SummarizeError";
+        this.statusCode = statusCode;
+        this.code = code;
+      }
+    };
+  }
+});
+
+// src/transcription/process.ts
+function runTool(command, args, stage, signal, timeout = 12e4) {
+  if (signal?.aborted) return Promise.reject(new SummarizeError(499, "ASR_CANCELLED", "Local transcription cancelled"));
+  return new Promise((done, reject) => {
+    let output = "", cancelled2 = false, timedOut = false;
+    const child = (0, import_node_child_process.spawn)(command, args, { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    child.stdout.on("data", (data) => {
+      output = (output + data.toString()).slice(-1024 * 1024);
+    });
+    child.stderr.on("data", () => {
+    });
+    let killTimer;
+    const stop = () => {
+      child.kill("SIGTERM");
+      killTimer = setTimeout(() => child.kill("SIGKILL"), 3e3);
+      killTimer.unref();
+    };
+    const abort = () => {
+      cancelled2 = true;
+      stop();
+    };
+    const timer = setTimeout(() => {
+      timedOut = true;
+      stop();
+    }, timeout);
+    const clean = () => {
+      clearTimeout(timer);
+      clearTimeout(killTimer);
+      signal?.removeEventListener("abort", abort);
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) abort();
+    child.on("error", () => {
+      clean();
+      reject(new SummarizeError(500, "ASR_TOOL_FAILED", `${stage}: tool could not start`));
+    });
+    child.on("close", (code) => {
+      clean();
+      if (cancelled2) reject(new SummarizeError(499, "ASR_CANCELLED", "Local transcription cancelled"));
+      else if (timedOut) reject(new SummarizeError(504, "ASR_TIMEOUT", `${stage}: timed out`));
+      else if (code !== 0) reject(new SummarizeError(502, "ASR_TOOL_FAILED", `${stage}: tool failed (exit ${code})`));
+      else done(output);
+    });
+  });
+}
+var import_node_child_process;
+var init_process = __esm({
+  "src/transcription/process.ts"() {
+    "use strict";
+    import_node_child_process = require("node:child_process");
+    init_errors();
+  }
+});
+
+// src/transcription/environment.ts
+async function sha256File(path) {
+  const hash = (0, import_node_crypto3.createHash)("sha256");
+  for await (const data of (0, import_node_fs.createReadStream)(path)) hash.update(data);
+  return hash.digest("hex");
+}
+function fingerprint(value) {
+  return (0, import_node_crypto3.createHash)("sha256").update(JSON.stringify(value)).digest("hex");
+}
+async function resolveLocalOptions(options = {}) {
+  const configFile = (0, import_node_path3.resolve)(options.configFile ?? (0, import_node_path3.join)((0, import_node_os2.homedir)(), ".config/video-summarizer/asr.json"));
+  let stored = {};
+  try {
+    stored = JSON.parse(await (0, import_promises3.readFile)(configFile, "utf8"));
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) throw new Error();
+  } catch (error) {
+    if (error.code !== "ENOENT") throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Invalid local transcription configuration");
+  }
+  const model = options.model ?? stored.model ?? "small";
+  if (!Object.hasOwn(LOCAL_MODELS, model)) throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Use small or medium, or provide --model-path");
+  const cacheDir = (0, import_node_path3.resolve)(options.cacheDir ?? stored.cacheDir ?? (0, import_node_path3.join)((0, import_node_os2.homedir)(), ".cache/video-summarizer"));
+  const language = options.language ?? stored.language ?? "auto";
+  if (!/^[a-z]{2,3}$/.test(language) && language !== "auto") throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Use a Whisper language code or auto");
+  const modelPath = (0, import_node_path3.resolve)(options.modelPath ?? (options.model ? void 0 : stored.modelPath) ?? (0, import_node_path3.join)(cacheDir, "models", `ggml-${model}.bin`));
+  const tools = Object.fromEntries(Object.entries(commands).map(([key, command]) => [key, options.tools?.[key] ?? stored.tools?.[key] ?? command]));
+  if (Object.values(tools).some((value) => typeof value !== "string" || !value.trim())) throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Invalid tool path");
+  return { model, modelPath, language, cacheDir, configFile, tools };
+}
+async function checkModel(path) {
+  try {
+    const info = await (0, import_promises3.stat)(path);
+    if (!info.isFile() || info.size < 1024 * 1024) return { status: "invalid" };
+    const file = await (0, import_promises3.open)(path, "r");
+    const header = Buffer.alloc(8);
+    try {
+      await file.read(header, 0, 8, 0);
+    } finally {
+      await file.close();
+    }
+    if (header.readUInt32LE(0) !== 1734831468 || header.readUInt32LE(4) < 51865) return { status: "invalid" };
+    const hash = await sha256File(path);
+    const known = Object.entries(LOCAL_MODELS).find(([name]) => (0, import_node_path3.basename)(path) === `ggml-${name}.bin`)?.[1];
+    if (known && (info.size !== known.bytes || hash !== known.sha256)) return { status: "invalid" };
+    return { status: "ready", bytes: info.size, sha256: hash };
+  } catch (error) {
+    return { status: error.code === "ENOENT" ? "missing" : "invalid" };
+  }
+}
+async function doctorLocalTranscription(options = {}) {
+  const config = await resolveLocalOptions(options);
+  const toolResults = await Promise.all(Object.entries(config.tools).map(async ([name, command]) => {
+    let available = true;
+    try {
+      await runTool(command, [name === "ffmpeg" || name === "ffprobe" ? "-version" : "--version"], "doctor", options.signal, 15e3);
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+      available = false;
+    }
+    return { name, command, available };
+  }));
+  const model = { ...await checkModel(config.modelPath), path: config.modelPath, name: config.model };
+  const missingTools = toolResults.filter((tool) => !tool.available).map((tool) => tool.name);
+  let homebrewPrefix;
+  if (missingTools.length && process.platform === "darwin") {
+    try {
+      homebrewPrefix = (await runTool("brew", ["--prefix"], "doctor", options.signal, 15e3)).trim() || void 0;
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+    }
+  }
+  return {
+    ready: missingTools.length === 0 && model.status === "ready",
+    platform: process.platform,
+    config,
+    tools: toolResults,
+    missingTools,
+    model,
+    downloadBytes: LOCAL_MODELS[config.model].bytes,
+    installation: {
+      toolPackages: [...new Set(missingTools.map(packageFor))],
+      homebrewPrefix,
+      modelDownloadBytes: model.status === "missing" ? LOCAL_MODELS[config.model].bytes : 0,
+      modelUrl: `https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${config.model}.bin`
+    },
+    setupSupported: process.platform === "darwin",
+    nextCommand: "asr setup"
+  };
+}
+async function setupLocalTranscription(options = {}) {
+  const before = await doctorLocalTranscription(options);
+  const config = before.config;
+  if (before.model.status === "invalid") throw new SummarizeError(400, "ASR_MODEL_INVALID", "Model is invalid; choose a valid model path or remove the damaged file before setup");
+  if (before.missingTools.length) {
+    if (process.platform !== "darwin") throw new SummarizeError(400, "ASR_SETUP_UNSUPPORTED", "Install tools manually on this platform, then run asr doctor");
+    try {
+      await runTool("brew", ["--version"], "Homebrew", options.signal);
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+      throw new SummarizeError(400, "ASR_SETUP_UNSUPPORTED", "Homebrew is missing; prepare it manually or configure existing tool paths");
+    }
+    if (before.missingTools.some((tool) => config.tools[tool] !== commands[tool])) throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Configured tool is unavailable; fix its path before installing");
+    const packages = before.installation.toolPackages;
+    options.onProgress?.({ stage: "install-tools", status: "started" });
+    await runTool("brew", ["install", ...packages], "install-tools", options.signal, 18e5);
+    options.onProgress?.({ stage: "install-tools", status: "complete" });
+  }
+  if (before.model.status === "missing") {
+    if (options.modelPath || config.modelPath !== (0, import_node_path3.join)(config.cacheDir, "models", `ggml-${config.model}.bin`)) throw new SummarizeError(400, "ASR_MODEL_INVALID", "Specified model file is missing; provide an existing model or omit --model-path to download");
+    await (0, import_promises3.mkdir)((0, import_node_path3.dirname)(config.modelPath), { recursive: true, mode: 448 });
+    const temp = `${config.modelPath}.${(0, import_node_crypto3.randomUUID)()}.part`;
+    options.onProgress?.({ stage: "download-model", status: "started" });
+    try {
+      const response = await fetch(`https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${config.model}.bin`, { signal: options.signal ?? AbortSignal.timeout(18e5) });
+      if (!response.ok || !response.body) throw new SummarizeError(502, "ASR_MODEL_DOWNLOAD_FAILED", `Model download HTTP ${response.status}`);
+      await (0, import_promises4.pipeline)(import_node_stream.Readable.fromWeb(response.body), (0, import_node_fs.createWriteStream)(temp, { flags: "wx", mode: 384 }), { signal: options.signal });
+      const expected = LOCAL_MODELS[config.model];
+      if ((await (0, import_promises3.stat)(temp)).size !== expected.bytes || await sha256File(temp) !== expected.sha256) throw new SummarizeError(502, "ASR_MODEL_INVALID", "Downloaded model checksum failed");
+      await (0, import_promises3.rename)(temp, config.modelPath);
+    } catch (error) {
+      if (error instanceof SummarizeError) throw error;
+      throw new SummarizeError(options.signal?.aborted ? 499 : 502, options.signal?.aborted ? "ASR_CANCELLED" : "ASR_MODEL_DOWNLOAD_FAILED", "Model download interrupted; rerun setup");
+    } finally {
+      await (0, import_promises3.rm)(temp, { force: true });
+    }
+    options.onProgress?.({ stage: "download-model", status: "complete" });
+  }
+  const after = await doctorLocalTranscription({ ...options, ...config });
+  if (!after.ready) throw new SummarizeError(500, "ASR_DEPENDENCIES_MISSING", "Setup incomplete; run asr doctor for missing items");
+  await privateJson(config.configFile, config);
+  return after;
+}
+var import_node_fs, import_promises3, import_node_os2, import_node_path3, import_node_crypto3, import_node_stream, import_promises4, LOCAL_MODELS, commands, packageFor;
+var init_environment = __esm({
+  "src/transcription/environment.ts"() {
+    "use strict";
+    import_node_fs = require("node:fs");
+    import_promises3 = require("node:fs/promises");
+    import_node_os2 = require("node:os");
+    import_node_path3 = require("node:path");
+    import_node_crypto3 = require("node:crypto");
+    import_node_stream = require("node:stream");
+    import_promises4 = require("node:stream/promises");
+    init_errors();
+    init_auth();
+    init_process();
+    LOCAL_MODELS = {
+      small: { bytes: 487601967, sha256: "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b" },
+      medium: { bytes: 1533763059, sha256: "6c14d5adee5f86394037b4e4e8b59f1673b6cee10e3cf0b11bbdbee79c156208" }
+    };
+    commands = { ytDlp: "yt-dlp", ffmpeg: "ffmpeg", ffprobe: "ffprobe", whisperCli: "whisper-cli" };
+    packageFor = (tool) => tool === "ytDlp" ? "yt-dlp" : tool === "whisperCli" ? "whisper.cpp" : "ffmpeg";
+  }
+});
+
+// src/transcription/local.ts
+var local_exports = {};
+__export(local_exports, {
+  transcribeLocally: () => transcribeLocally
+});
+function cancelled(signal) {
+  if (signal?.aborted) throw new SummarizeError(499, "ASR_CANCELLED", "Local transcription cancelled");
+}
+async function withLock(directory, work) {
+  await (0, import_promises5.mkdir)(directory, { recursive: true, mode: 448 });
+  const path = (0, import_node_path4.join)(directory, ".lock");
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const file = await (0, import_promises5.open)(path, "wx", 384);
+      await file.writeFile(String(process.pid));
+      await file.close();
+      break;
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      const pid = Number(await (0, import_promises5.readFile)(path, "utf8").catch(() => "0"));
+      let live = true;
+      try {
+        if (!Number.isInteger(pid) || pid <= 0) live = Date.now() - (await (0, import_promises5.stat)(path)).mtimeMs < 6e4;
+        else process.kill(pid, 0);
+      } catch (error2) {
+        live = error2.code === "EPERM";
+      }
+      if (live || attempt) throw new SummarizeError(409, "ASR_BUSY", "This transcription stage is already running; retry after it finishes");
+      await (0, import_promises5.rm)(path, { force: true });
+    }
+  }
+  try {
+    return await work();
+  } finally {
+    await (0, import_promises5.rm)(path, { force: true });
+  }
+}
+function parseSegments(raw, duration) {
+  const value = raw;
+  if (!Array.isArray(value?.transcription)) throw invalidTranscript();
+  const items = [];
+  let previous = -1;
+  for (const segment of value.transcription) {
+    const start = segment?.offsets?.from / 1e3, end = segment?.offsets?.to / 1e3;
+    if (typeof segment?.text !== "string" || !Number.isFinite(start) || !Number.isFinite(end) || start < 0 || start < previous || end < start || end > duration + 1) throw invalidTranscript();
+    previous = start;
+    const text = segment.text.trim();
+    if (text) items.push({ index: items.length, s: start, e: end, text });
+  }
+  if (!items.length || !items.some((item) => /[\p{L}\p{N}]/u.test(item.text))) throw invalidTranscript();
+  return { items, language: typeof value.result?.language === "string" ? value.result.language : void 0 };
+}
+async function transcribeLocally(input, original, subtitles, options) {
+  const signal = input.options?.signal ?? options.signal;
+  cancelled(signal);
+  const doctor = await doctorLocalTranscription({ ...options, signal });
+  if (!doctor.ready) throw new SummarizeError(400, doctor.model.status === "invalid" ? "ASR_MODEL_INVALID" : "ASR_DEPENDENCIES_MISSING", "Local transcription is not ready; run asr doctor, review missing items, then choose whether to run asr setup");
+  const config = doctor.config, tools = config.tools, video = input.video;
+  const page = Number(video.pageNumber ?? 1);
+  if (!Number.isInteger(page) || page < 1 || !(video.source === "bilibili" ? /^(BV[a-zA-Z0-9]{10}|av\d+)$/.test(video.videoId) : /^[a-zA-Z0-9_-]{11}$/.test(video.videoId))) throw invalidAudio();
+  const progress = options.onProgress;
+  const stage = async (name, work) => {
+    cancelled(signal);
+    progress?.({ stage: name, status: "started" });
+    const start = Date.now();
+    const result = await work();
+    cancelled(signal);
+    progress?.({ stage: name, status: "complete", seconds: (Date.now() - start) / 1e3 });
+    return result;
+  };
+  const mediaDir = (0, import_node_path4.join)(config.cacheDir, "audio", video.source, `${video.videoId}-p${page}`);
+  const audio = await withLock(mediaDir, async () => {
+    const marker = (0, import_node_path4.join)(mediaDir, "complete.json");
+    try {
+      const value = JSON.parse(await (0, import_promises5.readFile)(marker, "utf8"));
+      if (value.version !== 1 || !/^audio\.[a-zA-Z0-9]+$/.test(value.file) || !Number.isFinite(value.duration) || value.duration <= 0) throw invalidAudio();
+      const path = (0, import_node_path4.join)(mediaDir, value.file);
+      if ((await (0, import_promises5.stat)(path)).size !== value.bytes || await sha256File(path) !== value.sha256 || original.media?.cid && value.cid !== original.media.cid || original.media?.durationSeconds && Math.abs(value.duration - original.media.durationSeconds) > Math.max(3, original.media.durationSeconds * 0.01)) throw invalidAudio();
+      progress?.({ stage: "download-audio", status: "cached" });
+      return value;
+    } catch {
+      await (0, import_promises5.rm)(marker, { force: true });
+    }
+    for (const entry of await (0, import_promises5.readdir)(mediaDir)) if (entry.startsWith(".download-")) await (0, import_promises5.rm)((0, import_node_path4.join)(mediaDir, entry), { recursive: true, force: true });
+    const temp = (0, import_node_path4.join)(mediaDir, `.download-${(0, import_node_crypto4.randomUUID)()}`);
+    await (0, import_promises5.mkdir)(temp, { mode: 448 });
+    const cookie = (0, import_node_path4.join)(temp, "cookies.txt");
+    try {
+      return await stage("download-audio", async () => {
+        const url = video.source === "bilibili" ? `https://www.bilibili.com/video/${video.videoId}/?p=${page}` : `https://www.youtube.com/watch?v=${video.videoId}`;
+        const args = ["--ignore-config", "--no-playlist", "--retries", "1", "--socket-timeout", "30", "-f", "bestaudio", "--write-info-json", "-o", (0, import_node_path4.join)(temp, "audio.%(ext)s")];
+        const token = subtitles.bilibiliSessionTokens[0];
+        if (video.source === "bilibili" && token) {
+          if (/[\r\n\t]/.test(token)) throw new SummarizeError(400, "ASR_CONFIG_INVALID", "Invalid Bilibili session value");
+          await (0, import_promises5.writeFile)(cookie, `# Netscape HTTP Cookie File
+.bilibili.com	TRUE	/	TRUE	0	SESSDATA	${token}
+`, { mode: 384, flag: "wx" });
+          args.push("--cookies", cookie);
+        }
+        await runTool(tools.ytDlp, [...args, "--", url], "download-audio", signal, 6e5);
+        const info = JSON.parse(await (0, import_promises5.readFile)((0, import_node_path4.join)(temp, "audio.info.json"), "utf8"));
+        if (!info.ext || !/^[a-zA-Z0-9]+$/.test(info.ext)) throw invalidAudio();
+        await (0, import_promises5.rm)((0, import_node_path4.join)(temp, "audio.info.json"));
+        const file = `audio.${info.ext}`, path = (0, import_node_path4.join)(temp, file);
+        const duration = Number((await runTool(tools.ffprobe, ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path], "probe-audio", signal)).trim());
+        const expected = original.media?.durationSeconds ?? info.duration;
+        if (!Number.isFinite(duration) || duration <= 0 || expected !== void 0 && Math.abs(duration - expected) > Math.max(3, expected * 0.01)) throw invalidAudio();
+        const value = { version: 1, file, bytes: (await (0, import_promises5.stat)(path)).size, sha256: await sha256File(path), duration, title: original.title || info.title || video.videoId, cid: original.media?.cid };
+        if (!value.bytes) throw invalidAudio();
+        cancelled(signal);
+        await (0, import_promises5.rename)(path, (0, import_node_path4.join)(mediaDir, file));
+        await privateJson(marker, value);
+        return value;
+      });
+    } finally {
+      await (0, import_promises5.rm)(temp, { recursive: true, force: true });
+    }
+  });
+  const asrDir = (0, import_node_path4.join)(config.cacheDir, "transcripts", fingerprint({ engine: "whisper.cpp-v1", audio: audio.sha256, model: doctor.model.sha256, language: config.language }));
+  const parsed = await withLock(asrDir, async () => {
+    const marker = (0, import_node_path4.join)(asrDir, "complete.json");
+    try {
+      const value = JSON.parse(await (0, import_promises5.readFile)(marker, "utf8"));
+      for (const ext of ["json", "srt", "txt"]) if (await sha256File((0, import_node_path4.join)(asrDir, `whisper.${ext}`)) !== value.artifacts[ext]) throw invalidTranscript();
+      const result = parseSegments(JSON.parse(await (0, import_promises5.readFile)((0, import_node_path4.join)(asrDir, "whisper.json"), "utf8")), audio.duration);
+      progress?.({ stage: "transcribe", status: "cached" });
+      return result;
+    } catch {
+      await (0, import_promises5.rm)(marker, { force: true });
+    }
+    for (const entry of await (0, import_promises5.readdir)(asrDir)) if (entry.startsWith(".stage-")) await (0, import_promises5.rm)((0, import_node_path4.join)(asrDir, entry), { recursive: true, force: true });
+    const temp = (0, import_node_path4.join)(asrDir, `.stage-${(0, import_node_crypto4.randomUUID)()}`);
+    await (0, import_promises5.mkdir)(temp, { mode: 448 });
+    try {
+      const wav = (0, import_node_path4.join)(temp, "audio.wav"), prefix = (0, import_node_path4.join)(temp, "whisper");
+      await stage("normalize-audio", () => runTool(tools.ffmpeg, ["-nostdin", "-hide_banner", "-loglevel", "error", "-i", (0, import_node_path4.join)(mediaDir, audio.file), "-vn", "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wav], "normalize-audio", signal, 6e5));
+      return await stage("transcribe", async () => {
+        await runTool(tools.whisperCli, ["-m", config.modelPath, "-f", wav, "-l", config.language, "-oj", "-osrt", "-otxt", "-of", prefix], "transcribe", signal, 72e5);
+        const result = parseSegments(JSON.parse(await (0, import_promises5.readFile)(`${prefix}.json`, "utf8")), audio.duration);
+        const artifacts = {};
+        for (const ext of ["json", "srt", "txt"]) {
+          if (!(await (0, import_promises5.stat)(`${prefix}.${ext}`)).size) throw invalidTranscript();
+          artifacts[ext] = await sha256File(`${prefix}.${ext}`);
+        }
+        cancelled(signal);
+        for (const ext of ["json", "srt", "txt"]) await (0, import_promises5.rename)(`${prefix}.${ext}`, (0, import_node_path4.join)(asrDir, `whisper.${ext}`));
+        await privateJson(marker, { version: 1, engine: "whisper.cpp", model: (0, import_node_path4.basename)(config.modelPath), modelSha256: doctor.model.sha256, requestedLanguage: config.language, detectedLanguage: result.language, audioDurationSeconds: audio.duration, audioSha256: audio.sha256, artifacts });
+        return result;
+      });
+    } finally {
+      await (0, import_promises5.rm)(temp, { recursive: true, force: true });
+    }
+  });
+  cancelled(signal);
+  const items = parsed.items.map((item) => ({ ...item, text: input.options?.showTimestamp ? `${item.s} - ${item.text}` : item.text }));
+  return {
+    ...original,
+    title: audio.title,
+    subtitlesArray: items,
+    transcriptText: items.map((item) => item.text).join(" "),
+    usedDescription: false,
+    transcription: { engine: "whisper.cpp", model: (0, import_node_path4.basename)(config.modelPath), modelSha256: doctor.model.sha256, requestedLanguage: config.language, detectedLanguage: parsed.language, audioDurationSeconds: audio.duration, audioSha256: audio.sha256, source: { ...video, ...video.source === "bilibili" ? { pageNumber: page } : {} }, artifacts: { json: (0, import_node_path4.join)(asrDir, "whisper.json"), srt: (0, import_node_path4.join)(asrDir, "whisper.srt"), text: (0, import_node_path4.join)(asrDir, "whisper.txt") } }
+  };
+}
+var import_promises5, import_node_path4, import_node_crypto4, invalidAudio, invalidTranscript;
+var init_local = __esm({
+  "src/transcription/local.ts"() {
+    "use strict";
+    import_promises5 = require("node:fs/promises");
+    import_node_path4 = require("node:path");
+    import_node_crypto4 = require("node:crypto");
+    init_errors();
+    init_auth();
+    init_environment();
+    init_process();
+    invalidAudio = () => new SummarizeError(502, "ASR_INVALID_AUDIO", "Downloaded audio does not match the selected video or page");
+    invalidTranscript = () => new SummarizeError(502, "ASR_INVALID_TRANSCRIPT", "Empty or invalid local transcript; no successful result saved");
+  }
+});
+
+// src/agent/cli.ts
+var import_node_util = require("node:util");
+var import_promises6 = require("node:fs/promises");
+var import_node_path5 = require("node:path");
+init_auth();
 
 // src/agent/prepare.ts
 var import_promises2 = require("node:fs/promises");
@@ -4823,7 +5272,8 @@ async function prepareArtifacts(transcript, out, budget, provenance) {
       items.push({
         index: items.length,
         text: chars.slice(start, start + size).join(""),
-        ...seconds === void 0 ? {} : { s: seconds }
+        ...seconds === void 0 ? {} : { s: seconds },
+        ...item.e === void 0 ? {} : { e: item.e }
       });
     }
   }
@@ -4850,6 +5300,13 @@ async function prepareArtifacts(transcript, out, budget, provenance) {
   await (0, import_promises2.mkdir)(directory, { recursive: false, mode: 448 });
   await (0, import_promises2.mkdir)((0, import_node_path2.join)(directory, "chunks"));
   await (0, import_promises2.mkdir)((0, import_node_path2.join)(directory, "maps"));
+  if (transcript.transcription) {
+    await (0, import_promises2.mkdir)((0, import_node_path2.join)(directory, "asr"));
+    const artifacts = { json: "asr/whisper.json", srt: "asr/whisper.srt", text: "asr/whisper.txt" };
+    for (const key of ["json", "srt", "text"]) await (0, import_promises2.copyFile)(transcript.transcription.artifacts[key], (0, import_node_path2.join)(directory, artifacts[key]));
+    transcript = { ...transcript, transcription: { ...transcript.transcription, artifacts } };
+    provenance = { kind: "local-asr", ...transcript.transcription };
+  }
   await (0, import_promises2.writeFile)((0, import_node_path2.join)(directory, "transcript.json"), JSON.stringify(transcript, null, 2));
   const entries = [];
   for (const [i, chunk] of chunks.entries()) {
@@ -4884,6 +5341,12 @@ async function prepareArtifacts(transcript, out, budget, provenance) {
   await (0, import_promises2.writeFile)((0, import_node_path2.join)(directory, "manifest.json"), JSON.stringify(manifest, null, 2));
   return { manifest: (0, import_node_path2.join)(directory, "manifest.json"), chunkCount: entries.length, usedDescription: false };
 }
+
+// src/agent/cli.ts
+init_config();
+
+// src/subtitles/bilibili.ts
+init_fp();
 
 // src/subtitles/reduce-subtitle-timestamp.ts
 function reduceSubtitleTimestamp(subtitles = [], getStart, getText, shouldShowTimestamp) {
@@ -4921,19 +5384,8 @@ function reduceBilibiliSubtitleTimestamp(subtitles = [], shouldShowTimestamp) {
   );
 }
 
-// src/errors.ts
-var SummarizeError = class extends Error {
-  statusCode;
-  code;
-  constructor(statusCode, code, message) {
-    super(message);
-    this.name = "SummarizeError";
-    this.statusCode = statusCode;
-    this.code = code;
-  }
-};
-
 // src/subtitles/bilibili.ts
+init_errors();
 var MAX_SUBTITLE_ATTEMPTS = 8;
 function bilibiliHeaders(ctx, videoId) {
   const sessdata = sample(ctx.config.bilibiliSessionTokens);
@@ -4961,8 +5413,9 @@ async function fetchViewInfo(videoId, ctx) {
   const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)));
   if (!response.ok) throw new SummarizeError(response.status, "UPSTREAM", `Bilibili HTTP ${response.status}`);
   const json = await response.json();
-  if (json.code && json.code !== 0) throw new SummarizeError(502, "UPSTREAM", `Bilibili view code ${json.code}`);
-  return json?.data ?? {};
+  if (json.code !== 0) throw new SummarizeError(502, "UPSTREAM", `Bilibili view code ${json.code}`);
+  if (!json.data || typeof json.data !== "object") throw new SummarizeError(502, "CAPTIONS_INVALID", "Invalid Bilibili view response");
+  return json.data;
 }
 async function fetchSubtitleList(aid, cid, videoId, ctx) {
   const requestUrl = `https://api.bilibili.com/x/player/v2?aid=${aid}&cid=${cid}`;
@@ -4970,8 +5423,10 @@ async function fetchSubtitleList(aid, cid, videoId, ctx) {
   const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)));
   if (!response.ok) throw new SummarizeError(response.status, "UPSTREAM", `Bilibili HTTP ${response.status}`);
   const json = await response.json();
-  if (json.code && json.code !== 0) throw new SummarizeError(502, "UPSTREAM", `Bilibili player code ${json.code}`);
-  return json?.data?.subtitle?.subtitles ?? [];
+  if (json.code !== 0) throw new SummarizeError(502, "UPSTREAM", `Bilibili player code ${json.code}`);
+  const list = json?.data?.subtitle?.subtitles;
+  if (!Array.isArray(list)) throw new SummarizeError(502, "CAPTIONS_INVALID", "Invalid Bilibili caption list");
+  return list;
 }
 function pickSubtitle(list) {
   return list.find(({ lan }) => lan === "zh-CN") || list[0];
@@ -4985,24 +5440,27 @@ async function fetchBilibiliTranscript(videoId, pageNumber, shouldShowTimestamp,
   const descriptionText = desc || dynamic ? `${desc ?? ""} ${dynamic ?? ""}`.trim() : void 0;
   const hasPages = (pages?.length ?? 0) > 0;
   if (!hasPages && !pageNumber) {
-    return { title, subtitlesArray: null, descriptionText };
+    return { title, subtitlesArray: null, descriptionText, captionStatus: "unusable" };
   }
   const matchedPage = hasPages ? find(pages ?? [], { page: Number(pageNumber || 1) }) : void 0;
   if (pageNumber != null && !matchedPage) throw new SummarizeError(400, "UPSTREAM", "Bilibili page does not exist");
   const cid = matchedPage?.cid ?? pages?.[0]?.cid;
   if (!aid || !cid) {
-    return { title, subtitlesArray: null, descriptionText };
+    return { title, subtitlesArray: null, descriptionText, captionStatus: "unusable" };
   }
   const duration = matchedPage?.duration ?? data.duration;
+  const media = { cid, durationSeconds: duration, pageNumber: Number(pageNumber || 1) };
+  let sawCaption = false;
   for (let attempt = 1; attempt <= MAX_SUBTITLE_ATTEMPTS; attempt++) {
     const subtitleList = await fetchSubtitleList(aid, cid, videoId, ctx);
     if (!subtitleList || subtitleList.length < 1) {
       ctx.logger.debug(`empty subtitle list for ${videoId} (attempt ${attempt})`);
+      if (!sawCaption) return { title, subtitlesArray: null, descriptionText, captionStatus: "absent", media };
       continue;
     }
+    sawCaption = true;
     const betterSubtitle = pickSubtitle(subtitleList);
     const subtitleUrl = normalizeSubtitleUrl(betterSubtitle?.subtitle_url);
-    ctx.logger.debug("subtitle_url", subtitleUrl);
     if (!subtitleUrl) {
       continue;
     }
@@ -5014,13 +5472,14 @@ async function fetchBilibiliTranscript(videoId, pageNumber, shouldShowTimestamp,
           Referer: `https://www.bilibili.com/video/${videoId}/`
         }
       });
+      if (!subtitleResponse.ok) throw new SummarizeError(subtitleResponse.status, "UPSTREAM", `Bilibili captions HTTP ${subtitleResponse.status}`);
       const subtitles = await subtitleResponse.json();
       body = subtitles?.body;
     } catch (error) {
-      ctx.logger.warn("subtitle download failed", error);
+      ctx.logger.warn("subtitle download failed");
       continue;
     }
-    if (!body || body.length === 0) {
+    if (!Array.isArray(body) || body.length === 0 || body.some((item) => typeof item.content !== "string" || !Number.isFinite(item.from) || item.from < 0)) {
       continue;
     }
     const lastFrom = Number(body[body.length - 1]?.from ?? 0);
@@ -5028,17 +5487,19 @@ async function fetchBilibiliTranscript(videoId, pageNumber, shouldShowTimestamp,
     const matchesDuration = duration == null || Math.abs(lastFrom - duration) <= tolerance;
     const subtitlesArray = reduceBilibiliSubtitleTimestamp(body, shouldShowTimestamp);
     if (matchesDuration) {
-      return { title, subtitlesArray, descriptionText };
+      return { title, subtitlesArray, descriptionText, captionStatus: "available", media };
     }
     ctx.logger.warn(
       `bilibili subtitle for ${videoId} looks wrong (ends at ${lastFrom}s, video is ${duration}s); retry ${attempt}/${MAX_SUBTITLE_ATTEMPTS}`
     );
   }
   ctx.logger.warn(`no duration-matched subtitle for ${videoId} after ${MAX_SUBTITLE_ATTEMPTS} attempts`);
-  return { title, subtitlesArray: null, descriptionText };
+  return { title, subtitlesArray: null, descriptionText, captionStatus: sawCaption ? "unusable" : "absent", media };
 }
 
 // src/subtitles/youtube.ts
+init_fp();
+init_errors();
 async function fetchYoutubeSubtitleUrls(videoId, ctx) {
   const response = await ctx.fetch(`${ctx.config.savesubsBaseUrl}/action/extract`, {
     method: "POST",
@@ -5053,33 +5514,42 @@ async function fetchYoutubeSubtitleUrls(videoId, ctx) {
       "X-Requested-With": "xmlhttprequest"
     }
   });
-  const { response: json = {} } = await response.json();
-  return { title: json.title ?? "", subtitleList: json.formats ?? [] };
+  if (!response.ok) throw new SummarizeError(response.status, "UPSTREAM", `YouTube captions HTTP ${response.status}`);
+  const { response: json } = await response.json();
+  if (!json || !Array.isArray(json.formats)) throw new SummarizeError(502, "CAPTIONS_INVALID", "Invalid YouTube caption list");
+  return { title: json.title ?? "", subtitleList: json.formats };
 }
 async function fetchYoutubeTranscript(videoId, shouldShowTimestamp, ctx) {
   const { title, subtitleList } = await fetchYoutubeSubtitleUrls(videoId, ctx);
   if (!subtitleList || subtitleList.length <= 0) {
-    return { title, subtitlesArray: null };
+    return { title, subtitlesArray: null, captionStatus: "absent" };
   }
   const betterSubtitle = find(subtitleList, { quality: "zh-CN" }) || find(subtitleList, { quality: "English" }) || find(subtitleList, { quality: "English (auto" }) || subtitleList[0];
   if (!betterSubtitle) {
-    return { title, subtitlesArray: null };
+    return { title, subtitlesArray: null, captionStatus: "unusable" };
   }
   if (shouldShowTimestamp) {
     const subtitleUrl2 = `${ctx.config.savesubsBaseUrl}${betterSubtitle.url}?ext=json`;
     const response2 = await ctx.fetch(subtitleUrl2);
+    if (!response2.ok) throw new SummarizeError(response2.status, "UPSTREAM", `YouTube captions HTTP ${response2.status}`);
     const subtitles2 = await response2.json();
-    return { title, subtitlesArray: reduceYoutubeSubtitleTimestamp(subtitles2) };
+    if (!Array.isArray(subtitles2) || subtitles2.some((item) => !Array.isArray(item.lines) || item.lines.some((line) => typeof line !== "string") || !Number.isFinite(item.start))) throw new SummarizeError(502, "CAPTIONS_INVALID", "Invalid YouTube captions");
+    const subtitlesArray2 = reduceYoutubeSubtitleTimestamp(subtitles2);
+    return { title, subtitlesArray: subtitlesArray2, captionStatus: subtitlesArray2.length ? "available" : "unusable" };
   }
   const subtitleUrl = `${ctx.config.savesubsBaseUrl}${betterSubtitle.url}?ext=txt`;
   const response = await ctx.fetch(subtitleUrl);
+  if (!response.ok) throw new SummarizeError(response.status, "UPSTREAM", `YouTube captions HTTP ${response.status}`);
   const subtitles = await response.text();
   const subtitlesArray = subtitles.split("\r\n\r\n").filter((text) => text.trim().length > 0).map((text, index) => ({ text, index }));
-  return { title, subtitlesArray };
+  return { title, subtitlesArray, captionStatus: subtitlesArray.length ? "available" : "unusable" };
 }
 
 // src/subtitles/index.ts
 async function fetchTranscript(input, config, ctx) {
+  const signal = input.options?.signal;
+  const originalFetch = ctx.fetch;
+  if (signal) ctx = { ...ctx, fetch: (url, init) => originalFetch(url, { ...init, signal }) };
   const { source, videoId, pageNumber } = input.video;
   const shouldShowTimestamp = input.options?.showTimestamp;
   const result = source === "youtube" ? await fetchYoutubeTranscript(videoId, shouldShowTimestamp, ctx) : await fetchBilibiliTranscript(videoId, pageNumber, shouldShowTimestamp, ctx);
@@ -5093,11 +5563,37 @@ async function fetchTranscript(input, config, ctx) {
     subtitlesArray,
     descriptionText,
     transcriptText,
-    usedDescription
+    usedDescription,
+    captionStatus: result.captionStatus,
+    media: result.media
   };
 }
 
+// src/transcription/fetch.ts
+init_errors();
+async function fetchTranscriptWithLocal(input, config, ctx, local) {
+  if (local && input.video.source === "bilibili") {
+    config = { ...config, bilibiliSessionTokens: config.bilibiliSessionTokens.slice(0, 1) };
+    ctx = { ...ctx, config };
+  }
+  const transcript = await fetchTranscript(input, config, ctx);
+  if (!local) return transcript;
+  if (transcript.captionStatus === "unusable") throw new SummarizeError(502, "CAPTIONS_INVALID", "Platform captions are invalid; local transcription was not started");
+  if (transcript.captionStatus !== "absent") return transcript;
+  if (input.video.source === "bilibili") {
+    const token = config.bilibiliSessionTokens[0];
+    if (!token) throw new SummarizeError(401, "UPSTREAM", "Bilibili authentication is required to confirm caption absence");
+    const response = await ctx.fetch("https://api.bilibili.com/x/web-interface/nav", { headers: { "User-Agent": config.userAgent, Cookie: `SESSDATA=${token}` }, signal: input.options?.signal });
+    if (!response.ok) throw new SummarizeError(response.status, "UPSTREAM", `Bilibili authentication HTTP ${response.status}`);
+    const nav = await response.json();
+    if (nav.code !== 0 || nav.data?.isLogin !== true) throw new SummarizeError(401, "UPSTREAM", "Bilibili session is invalid; local transcription was not started");
+  }
+  return (await Promise.resolve().then(() => (init_local(), local_exports))).transcribeLocally(input, transcript, config, local);
+}
+
 // src/agent/cli.ts
+init_environment();
+init_errors();
 var help = `video-summarizer source CLI \u2014 Node.js >=22; no LLM API required
   auth login --out <new-private-directory>         Generate login.png and login.json
   auth poll --state <login.json> [--wait]           Check once, or poll for <=180s
@@ -5106,13 +5602,20 @@ var help = `video-summarizer source CLI \u2014 Node.js >=22; no LLM API required
   prepare --video <URL|BV|av|YouTubeID> --out <new-directory>
   prepare --transcript <txt|json> --out <new-directory> [--title <title>]
   inspect --manifest <manifest.json> [--offset 0] [--limit 20]  Bounded manifest page
+  asr doctor                                      Check optional local transcription tools/model
+  asr setup                                       Explicitly install missing tools/model only
 Options: --auth-file <path>, --chunk-tokens <128..16000; default 3000>,
          --source <bilibili|youtube>, --page <positive integer>
+Local ASR: prepare --asr local; --model <small|medium>, --model-path <existing file>,
+           --asr-language <auto|Whisper code>, --asr-cache-dir <path>, --asr-config <path>,
+           --yt-dlp <path>, --ffmpeg <path>, --ffprobe <path>, --whisper-cli <path>
 Auth precedence: BILIBILI_SESSION_TOKEN (one SESSDATA value), then --auth-file,
 then ~/.config/video-summarizer/bilibili.json. Import/poll writes the chosen file.
 Only manifest path/status is printed. Transcript and chunks are stored on disk.
 Existing output directories are rejected. Plain text is assumed to be a transcript;
-JSON must have the repository's TranscriptResult shape. No ASR/video download.
+JSON must have the repository's TranscriptResult shape. Captions are tried first.
+ASR is opt-in, runs locally only for explicit caption absence, and never installs.
+Setup uses existing Homebrew on macOS; other platforms require manual tools.
 `;
 async function main() {
   const { values, positionals } = (0, import_node_util.parseArgs)({ allowPositionals: true, options: {
@@ -5130,23 +5633,50 @@ async function main() {
     page: { type: "string" },
     manifest: { type: "string" },
     offset: { type: "string" },
-    limit: { type: "string" }
+    limit: { type: "string" },
+    asr: { type: "string" },
+    model: { type: "string" },
+    "model-path": { type: "string" },
+    "asr-language": { type: "string" },
+    "asr-cache-dir": { type: "string" },
+    "asr-config": { type: "string" },
+    "yt-dlp": { type: "string" },
+    ffmpeg: { type: "string" },
+    ffprobe: { type: "string" },
+    "whisper-cli": { type: "string" }
   } });
   if (values.help || !positionals.length) {
     console.log(help);
     return;
   }
-  const authFile = (0, import_node_path3.resolve)(values["auth-file"] ?? defaultAuthFile());
+  const authFile = (0, import_node_path5.resolve)(values["auth-file"] ?? defaultAuthFile());
+  const controller = new AbortController();
+  process.once("SIGINT", () => controller.abort());
+  process.once("SIGTERM", () => controller.abort());
+  const local = {
+    model: values.model,
+    modelPath: values["model-path"],
+    language: values["asr-language"],
+    cacheDir: values["asr-cache-dir"],
+    configFile: values["asr-config"],
+    signal: controller.signal,
+    tools: { ytDlp: values["yt-dlp"], ffmpeg: values.ffmpeg, ffprobe: values.ffprobe, whisperCli: values["whisper-cli"] },
+    onProgress: (event) => console.error(JSON.stringify({ progress: event }))
+  };
   const required = (name) => {
     const value = values[name];
     if (!value) throw new Error(`MISSING_OPTION: --${name}`);
     return value;
   };
   let result;
-  if (positionals[0] === "auth") {
+  if (positionals[0] === "asr") {
+    if (positionals[1] === "doctor") result = await doctorLocalTranscription(local);
+    else if (positionals[1] === "setup") result = await setupLocalTranscription(local);
+    else throw new Error("UNKNOWN_ASR_COMMAND");
+  } else if (positionals[0] === "auth") {
     switch (positionals[1]) {
       case "login":
-        result = await startLogin((0, import_node_path3.resolve)(required("out")));
+        result = await startLogin((0, import_node_path5.resolve)(required("out")));
         break;
       case "status":
         result = await checkSession(await readSession(authFile));
@@ -5161,14 +5691,14 @@ async function main() {
           });
           process.stdin.on("end", () => done(text));
           process.stdin.on("error", reject);
-        }) : await (0, import_promises3.readFile)(file, "utf8");
+        }) : await (0, import_promises6.readFile)(file, "utf8");
         result = await importSession(input, authFile);
         break;
       }
       case "poll": {
         const deadline = Date.now() + 18e4;
         do {
-          result = await pollLogin((0, import_node_path3.resolve)(required("state")), authFile);
+          result = await pollLogin((0, import_node_path5.resolve)(required("state")), authFile);
           if (!values.wait || result.state === "authenticated") break;
           await new Promise((done) => setTimeout(done, 3e3));
         } while (Date.now() < deadline);
@@ -5182,7 +5712,7 @@ async function main() {
     if (!values.manifest) throw new Error("MISSING_OPTION: --manifest");
     const offset = Number(values.offset ?? 0), limit = Number(values.limit ?? 20);
     if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(limit) || limit < 1 || limit > 20) throw new Error("INVALID_MANIFEST_PAGE");
-    const manifest = JSON.parse(await (0, import_promises3.readFile)(values.manifest, "utf8"));
+    const manifest = JSON.parse(await (0, import_promises6.readFile)(values.manifest, "utf8"));
     if (manifest.version !== 1 || !Array.isArray(manifest.chunks)) throw new Error("INVALID_MANIFEST");
     const { chunks, ...metadata } = manifest;
     result = {
@@ -5194,11 +5724,18 @@ async function main() {
   } else if (positionals[0] === "prepare") {
     if (!!values.video === !!values.transcript) throw new Error("PROVIDE_ONE_OF_VIDEO_OR_TRANSCRIPT");
     const out = required("out");
+    try {
+      await (0, import_promises6.lstat)(out);
+      throw new Error("OUTPUT_EXISTS: choose a new output directory");
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    if (values.asr && values.asr !== "local") throw new Error("INVALID_ASR: use local");
     let transcript;
     let provenance;
     if (values.transcript) {
       transcript = await localTranscript(values.transcript, values.title);
-      provenance = { kind: "provided-transcript", file: (0, import_node_path3.resolve)(values.transcript) };
+      provenance = { kind: "provided-transcript", file: (0, import_node_path5.resolve)(values.transcript) };
     } else {
       const video = parseVideo(values.video, values.source);
       if (values.page) {
@@ -5207,9 +5744,9 @@ async function main() {
         video.pageNumber = page;
       }
       const token = video.source === "bilibili" ? await readSession(authFile) : void 0;
-      if (token) await checkSession(token);
+      if (token) await checkSession(token, (url, init) => request(String(url), { ...init, signal: controller.signal }));
       const config = resolveSubtitleConfig({ bilibiliSessionTokens: token ? [token] : [] });
-      transcript = await fetchTranscript({ video, options: { showTimestamp: true } }, config, {
+      transcript = await fetchTranscriptWithLocal({ video, options: { showTimestamp: true, signal: controller.signal } }, config, {
         config,
         fetch: (url, init) => request(String(url), init),
         logger: { debug() {
@@ -5217,8 +5754,14 @@ async function main() {
         }, warn() {
         }, error() {
         } }
-      });
-      provenance = { kind: "platform-captions", ...video };
+      }, values.asr === "local" ? local : void 0);
+      if (transcript.captionStatus === "absent" && !transcript.transcription) {
+        const error = new SummarizeError(501, "NO_TRANSCRIPT", "No available platform captions");
+        Object.assign(error, { reason: "captions_absent" });
+        throw error;
+      }
+      if (transcript.captionStatus === "unusable") throw new SummarizeError(502, "CAPTIONS_INVALID", "Platform captions are invalid; retry or provide a transcript");
+      provenance = transcript.transcription ? { kind: "local-asr", ...transcript.transcription } : { kind: "platform-captions", ...video };
     }
     result = await prepareArtifacts(transcript, out, Number(values["chunk-tokens"] ?? 3e3), provenance);
   } else throw new Error("UNKNOWN_COMMAND");
@@ -5226,6 +5769,9 @@ async function main() {
 }
 main().catch((error) => {
   const message = error instanceof Error ? error.message : "UNKNOWN_ERROR";
-  console.error(JSON.stringify({ error: error instanceof SyntaxError ? "INVALID_JSON" : message }));
+  console.error(JSON.stringify({
+    error: error instanceof SummarizeError ? error.code : error instanceof SyntaxError ? "INVALID_JSON" : message,
+    ...error instanceof SummarizeError ? { message, reason: error.reason } : {}
+  }));
   process.exitCode = 1;
 });

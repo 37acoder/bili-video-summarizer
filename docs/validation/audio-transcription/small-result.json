@@ -1,0 +1,60 @@
+{
+  "videoId": "BV12ftJ6rEkw",
+  "pageNumber": 1,
+  "engine": "whisper.cpp",
+  "engineVersion": "1.9.5",
+  "model": "ggml-small.bin",
+  "modelBytes": 487601967,
+  "modelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+  "requestedLanguage": "auto",
+  "detectedLanguage": "zh",
+  "audioDurationSeconds": 2221.312,
+  "audioSha256": "cb0baba7b93e1b1bd45b079efc205123fa0c17a22c9a4447370341ed8fda4190",
+  "stagesSeconds": {
+    "download": 1.939,
+    "normalize": 1.18,
+    "transcribe": 158.595
+  },
+  "itemCount": 772,
+  "chunkCount": 11,
+  "chunkBudget": 3000,
+  "chunkTextPreserved": true,
+  "allTimestampsPreserved": true,
+  "allChunksWithinBudget": true,
+  "lastSpeechEndSeconds": 2208.16,
+  "cacheReplay": [
+    "download-audio:cached",
+    "transcribe:cached"
+  ],
+  "liveLibrary": {
+    "status": "complete",
+    "source": "whisper.cpp",
+    "model": "ggml-small.bin",
+    "itemCount": 772,
+    "promptStages": 1,
+    "promptLabeled": true,
+    "events": [
+      {
+        "stage": "download-audio",
+        "status": "cached"
+      },
+      {
+        "stage": "transcribe",
+        "status": "cached"
+      }
+    ]
+  },
+  "mockLLMIntegration": {
+    "mode": "real-small-transcript; mock LLM transport",
+    "asrModel": "ggml-small.bin",
+    "itemCount": 772,
+    "promptChunks": 3,
+    "mapStages": 3,
+    "llmCalls": 5,
+    "headInPrompts": true,
+    "tailInPrompts": true,
+    "allMapCallsLabeled": true,
+    "summaryLabeled": true
+  },
+  "qualityBoundary": "No full audio ground truth. Suspected recognition errors retained; mock LLM outputs are not video summaries."
+}

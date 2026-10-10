@@ -1,5 +1,5 @@
 import type { ResolvedSubtitleConfig } from '../config'
-import type { CommonSubtitleItem, FetchLike, Logger } from '../types'
+import type { CommonSubtitleItem, FetchLike, Logger, TranscriptResult } from '../types'
 
 /** Shared context passed to platform-specific subtitle fetchers. */
 export interface SubtitleFetchContext {
@@ -13,4 +13,6 @@ export interface SubtitleFetchResult {
   title: string
   subtitlesArray: CommonSubtitleItem[] | null
   descriptionText?: string
+  captionStatus?: TranscriptResult['captionStatus']
+  media?: TranscriptResult['media']
 }

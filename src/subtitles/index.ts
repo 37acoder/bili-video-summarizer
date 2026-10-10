@@ -21,6 +21,9 @@ export async function fetchTranscript(
   config: ResolvedSubtitleConfig,
   ctx: SubtitleFetchContext,
 ): Promise<TranscriptResult> {
+  const signal = input.options?.signal
+  const originalFetch = ctx.fetch
+  if (signal) ctx = { ...ctx, fetch: (url, init) => originalFetch(url, { ...init, signal }) }
   const { source, videoId, pageNumber } = input.video
   const shouldShowTimestamp = input.options?.showTimestamp
 
@@ -49,5 +52,7 @@ export async function fetchTranscript(
     descriptionText,
     transcriptText,
     usedDescription,
+    captionStatus: result.captionStatus,
+    media: result.media,
   }
 }

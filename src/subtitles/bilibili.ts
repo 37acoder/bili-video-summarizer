@@ -71,8 +71,9 @@ async function fetchViewInfo(videoId: string, ctx: SubtitleFetchContext): Promis
   const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)))
   if (!response.ok) throw new SummarizeError(response.status, 'UPSTREAM', `Bilibili HTTP ${response.status}`)
   const json = (await response.json()) as { code?: number; data?: BilibiliViewInfo }
-  if (json.code && json.code !== 0) throw new SummarizeError(502, 'UPSTREAM', `Bilibili view code ${json.code}`)
-  return json?.data ?? {}
+  if (json.code !== 0) throw new SummarizeError(502, 'UPSTREAM', `Bilibili view code ${json.code}`)
+  if (!json.data || typeof json.data !== 'object') throw new SummarizeError(502, 'CAPTIONS_INVALID', 'Invalid Bilibili view response')
+  return json.data
 }
 
 async function fetchSubtitleList(
@@ -86,8 +87,10 @@ async function fetchSubtitleList(
   const response = await ctx.fetch(requestUrl, commonConfig(bilibiliHeaders(ctx, videoId)))
   if (!response.ok) throw new SummarizeError(response.status, 'UPSTREAM', `Bilibili HTTP ${response.status}`)
   const json = (await response.json()) as { code?: number; data?: { subtitle?: { subtitles?: BilibiliSubtitleMeta[] } } }
-  if (json.code && json.code !== 0) throw new SummarizeError(502, 'UPSTREAM', `Bilibili player code ${json.code}`)
-  return json?.data?.subtitle?.subtitles ?? []
+  if (json.code !== 0) throw new SummarizeError(502, 'UPSTREAM', `Bilibili player code ${json.code}`)
+  const list = json?.data?.subtitle?.subtitles
+  if (!Array.isArray(list)) throw new SummarizeError(502, 'CAPTIONS_INVALID', 'Invalid Bilibili caption list')
+  return list
 }
 
 function pickSubtitle(list: BilibiliSubtitleMeta[]): BilibiliSubtitleMeta | undefined {
@@ -111,27 +114,30 @@ export async function fetchBilibiliTranscript(
   // Videos without pages keep the original behavior: no caption list to fetch.
   const hasPages = (pages?.length ?? 0) > 0
   if (!hasPages && !pageNumber) {
-    return { title, subtitlesArray: null, descriptionText }
+    return { title, subtitlesArray: null, descriptionText, captionStatus: 'unusable' }
   }
 
   const matchedPage = hasPages ? find(pages ?? [], { page: Number(pageNumber || 1) }) : undefined
   if (pageNumber != null && !matchedPage) throw new SummarizeError(400, 'UPSTREAM', 'Bilibili page does not exist')
   const cid = matchedPage?.cid ?? pages?.[0]?.cid
   if (!aid || !cid) {
-    return { title, subtitlesArray: null, descriptionText }
+    return { title, subtitlesArray: null, descriptionText, captionStatus: 'unusable' }
   }
   const duration = matchedPage?.duration ?? data.duration
+  const media = { cid, durationSeconds: duration, pageNumber: Number(pageNumber || 1) }
+  let sawCaption = false
 
   for (let attempt = 1; attempt <= MAX_SUBTITLE_ATTEMPTS; attempt++) {
     const subtitleList = await fetchSubtitleList(aid, cid, videoId, ctx)
     if (!subtitleList || subtitleList.length < 1) {
       ctx.logger.debug(`empty subtitle list for ${videoId} (attempt ${attempt})`)
+      if (!sawCaption) return { title, subtitlesArray: null, descriptionText, captionStatus: 'absent', media }
       continue
     }
+    sawCaption = true
 
     const betterSubtitle = pickSubtitle(subtitleList)
     const subtitleUrl = normalizeSubtitleUrl(betterSubtitle?.subtitle_url)
-    ctx.logger.debug('subtitle_url', subtitleUrl)
     if (!subtitleUrl) {
       continue
     }
@@ -144,13 +150,14 @@ export async function fetchBilibiliTranscript(
           Referer: `https://www.bilibili.com/video/${videoId}/`,
         },
       })
+      if (!subtitleResponse.ok) throw new SummarizeError(subtitleResponse.status, 'UPSTREAM', `Bilibili captions HTTP ${subtitleResponse.status}`)
       const subtitles = (await subtitleResponse.json()) as BilibiliSubtitleFile
       body = subtitles?.body
     } catch (error) {
-      ctx.logger.warn('subtitle download failed', error)
+      ctx.logger.warn('subtitle download failed')
       continue
     }
-    if (!body || body.length === 0) {
+    if (!Array.isArray(body) || body.length === 0 || body.some(item => typeof item.content !== 'string' || !Number.isFinite(item.from) || item.from < 0)) {
       continue
     }
 
@@ -160,7 +167,7 @@ export async function fetchBilibiliTranscript(
     const subtitlesArray = reduceBilibiliSubtitleTimestamp(body, shouldShowTimestamp)
 
     if (matchesDuration) {
-      return { title, subtitlesArray, descriptionText }
+      return { title, subtitlesArray, descriptionText, captionStatus: 'available', media }
     }
 
     ctx.logger.warn(
@@ -174,5 +181,5 @@ export async function fetchBilibiliTranscript(
   // would silently produce a summary of the wrong content. Degrade to the
   // description instead.
   ctx.logger.warn(`no duration-matched subtitle for ${videoId} after ${MAX_SUBTITLE_ATTEMPTS} attempts`)
-  return { title, subtitlesArray: null, descriptionText }
+  return { title, subtitlesArray: null, descriptionText, captionStatus: sawCaption ? 'unusable' : 'absent', media }
 }

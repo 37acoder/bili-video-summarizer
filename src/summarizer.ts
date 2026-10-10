@@ -41,7 +41,8 @@ import {
   isMissingTranscript,
   type MissingTranscriptPolicy,
 } from './summarize/missing-transcript'
-import { fetchTranscript } from './subtitles'
+import { fetchTranscriptWithLocal } from './transcription/fetch'
+import type { LocalTranscriptionOptions } from './transcription/types'
 import type {
   BuiltPrompt,
   BuiltPromptStage,
@@ -56,6 +57,7 @@ import type {
 } from './types'
 import { readEnv } from './utils/env'
 import { noopLogger } from './utils/logger'
+import { resolveLanguageName } from './prompt/language'
 
 export interface VideoSummarizerOptions {
   /** Config for the default OpenAI-compatible LLM client. */
@@ -64,6 +66,8 @@ export interface VideoSummarizerOptions {
   llmClient?: LlmClient
   /** Subtitle extraction config. */
   subtitle?: SubtitleConfig
+  /** Opt-in local fallback for explicitly absent captions. Never installs dependencies. */
+  localTranscription?: LocalTranscriptionOptions | false
   /** Result cache. Defaults to an in-memory cache. Pass `false` to disable. */
   cache?: CacheStore | false
   logger?: Logger
@@ -89,7 +93,7 @@ export interface VideoSummarizer {
   fetchTranscript(input: SummarizeInput): Promise<TranscriptResult>
   /** Build the fully-resolved prompt (without calling the LLM). */
   buildPrompt(input: SummarizeInput): Promise<BuiltPrompt>
-  /** Deterministic cache key for a request. */
+  /** Deterministic request cache key; local ASR mode appends a resolved content fingerprint internally. */
   cacheKey(input: SummarizeInput): string
   /** Summarize and return the complete text. */
   summarize(input: SummarizeInput): Promise<string>
@@ -157,7 +161,8 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
   const defaultMinTranscriptTokens = options.minTranscriptTokens ?? DEFAULT_MIN_TRANSCRIPT_TOKENS
 
   function cacheKey(input: SummarizeInput): string {
-    return getCacheId(input)
+    if (!options.localTranscription) return getCacheId(input)
+    return `${getCacheId(input)}-local-v1-${encodeURIComponent(JSON.stringify({ source: input.video.source, page: input.video.pageNumber ?? 1, model: options.localTranscription.model, path: options.localTranscription.modelPath, language: options.localTranscription.language, config: options.localTranscription.configFile }))}`
   }
 
   function resolveMissingPolicy(input: SummarizeInput): MissingTranscriptPolicy {
@@ -170,7 +175,7 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
   }
 
   async function fetchTranscriptFor(input: SummarizeInput): Promise<TranscriptResult> {
-    return fetchTranscript(input, subtitleConfig, { fetch: fetchImpl, config: subtitleConfig, logger })
+    return fetchTranscriptWithLocal(input, subtitleConfig, { fetch: fetchImpl, config: subtitleConfig, logger }, options.localTranscription)
   }
 
   function resolveModel(input: SummarizeInput): string {
@@ -249,6 +254,7 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       params: samplingParams(input.options, reasoningEffort),
       signal: input.options?.signal,
       logger,
+      transcriptionNotice: transcript.transcription ? 'Source: local automatic transcription (whisper.cpp). Clearly label this source in the summary. Preserve uncertain names, numbers, negations and possible recognition errors as uncertainties; do not silently invent corrections.' : undefined,
     }
     return { transcript, model, maxOutputTokens, deps, grounded }
   }
@@ -296,6 +302,7 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       }))
     }
 
+    if (deps.transcriptionNotice) stages = stages.map(stage => ({ ...stage, prompt: `${deps.transcriptionNotice}\n\n${stage.prompt}` }))
     const prompt = stages[0]?.prompt ?? ''
     return {
       videoId: video.videoId,
@@ -311,7 +318,8 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
   }
 
   async function summarize(input: SummarizeInput): Promise<string> {
-    const key = cacheKey(input)
+    const resolved = options.localTranscription ? await resolveRequest(input) : undefined
+    const key = await resolvedCacheKey(input, resolved)
     if (cache) {
       const cached = await cache.get(key)
       if (cached) {
@@ -320,9 +328,10 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       }
     }
 
-    const { transcript, deps, grounded } = await resolveRequest(input)
-    const result =
+    const { transcript, deps, grounded } = resolved ?? await resolveRequest(input)
+    const summary =
       grounded !== undefined ? grounded : trimResult((await summarizeMapReduce(transcript, deps)).summary)
+    const result = transcript.transcription ? `${sourceLabel(transcript, input)}\n\n${summary}` : summary
 
     if (cache) {
       try {
@@ -335,7 +344,8 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
   }
 
   async function summarizeStream(input: SummarizeInput): Promise<AsyncIterable<string>> {
-    const key = cacheKey(input)
+    const resolved = options.localTranscription ? await resolveRequest(input) : undefined
+    const key = await resolvedCacheKey(input, resolved)
     if (cache) {
       const cached = await cache.get(key)
       if (cached) {
@@ -344,10 +354,25 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       }
     }
 
-    const { transcript, deps, grounded } = await resolveRequest(input)
-    const source =
+    const { transcript, deps, grounded } = resolved ?? await resolveRequest(input)
+    const rawSource =
       grounded !== undefined ? singleChunk(grounded) : await summarizeMapReduceStream(transcript, deps)
+    const source = transcript.transcription ? labelStream(rawSource, sourceLabel(transcript, input)) : rawSource
     return streamWithCache(source, key, cache, logger)
+  }
+
+  function sourceLabel(transcript: TranscriptResult, input: SummarizeInput) {
+    const metadata = transcript.transcription!
+    return /chinese/i.test(resolveLanguageName(input.options?.outputLanguage))
+      ? `> 来源：本地自动转录（${metadata.engine}，${metadata.model}）；可能存在识别错误。`
+      : `> Source: local automatic transcription (${metadata.engine}, ${metadata.model}); recognition errors may remain.`
+  }
+  async function* labelStream(source: AsyncIterable<string>, label: string) { yield `${label}\n\n`; yield* source }
+
+  async function resolvedCacheKey(input: SummarizeInput, resolved?: ResolvedRequest) {
+    if (!resolved) return cacheKey(input)
+    const { fingerprint } = await import('./transcription/environment')
+    return `${cacheKey(input)}-${fingerprint({ transcript: resolved.transcript, model: resolved.model, options: input.options })}`
   }
 
   return { fetchTranscript: fetchTranscriptFor, buildPrompt, cacheKey, summarize, summarizeStream }

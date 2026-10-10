@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-10",
+  "sourceRevision": "d005ce0",
+  "videoId": "BV12ftJ6rEkw",
+  "environment": {
+    "arch": "arm64",
+    "chip": "Apple M4",
+    "memoryGiB": 16,
+    "ytDlp": "2026.08.19",
+    "whisperCpp": "1.9.5",
+    "device": "Metal",
+    "threads": 4,
+    "beamSize": 5,
+    "bestOf": 5
+  },
+  "captionProbe": {
+    "authenticated": true,
+    "videoId": "BV12ftJ6rEkw",
+    "viewCode": 0,
+    "playerCode": 0,
+    "cid": 41516207106,
+    "duration": 2222,
+    "subtitleCount": 0,
+    "languages": []
+  },
+  "pipeline": {
+    "status": "complete",
+    "modelFile": "ggml-medium.bin",
+    "language": "zh",
+    "stagesSeconds": {
+      "download": 4.304,
+      "normalize": 1.353,
+      "transcribe": 563.503,
+      "prepare": 0.074
+    },
+    "audioDurationSeconds": 2221.312,
+    "itemCount": 882,
+    "lastSpeechStartSeconds": 2206.6,
+    "audioBytes": 39439205,
+    "wavBytes": 71082062
+  },
+  "verification": {
+    "status": "passed",
+    "itemCount": 882,
+    "chunkCount": 9,
+    "allChunksHashesValid": true,
+    "chunkTextAndTimesUnchanged": true,
+    "chunkBudgetValid": true,
+    "firstSpeechStart": 0,
+    "lastSpeechStart": 2206.6,
+    "lastSpeechEnd": 2208.6,
+    "sourceEndText": "我们下期节目再见了 拜拜",
+    "transcribeRealtimeFactor": 0.254
+  },
+  "summary": {
+    "file": "summary.md",
+    "mapsComplete": 9,
+    "mapsExpected": 9,
+    "reviewMethod": "ASR text review; no manual listening or WER ground truth"
+  },
+  "regression": {
+    "typecheck": "passed",
+    "testFilesPassed": 10,
+    "testsPassed": 79,
+    "existingOutputRejected": true,
+    "unsupportedUrlRejected": true
+  },
+  "cloudInput": {
+    "codec": "mp3",
+    "bitrateKbps": 48,
+    "sampleRateHz": 16000,
+    "channels": 1,
+    "bytes": 13328915,
+    "durationSeconds": 2221.312,
+    "apiCalled": false
+  }
+}

@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, copyFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
 import type { CommonSubtitleItem, TranscriptResult, VideoRequest } from '../types'
@@ -70,7 +70,7 @@ export async function prepareArtifacts(transcript: TranscriptResult, out: string
       const seconds = item.s === undefined ? undefined : Number(item.s)
       if (seconds !== undefined && (!Number.isFinite(seconds) || seconds < 0)) throw new Error('INVALID_TIMESTAMP')
       items.push({ index: items.length, text: chars.slice(start, start + size).join(''),
-        ...(seconds === undefined ? {} : { s: seconds }) })
+        ...(seconds === undefined ? {} : { s: seconds }), ...(item.e === undefined ? {} : { e: item.e }) })
     }
   }
   const chunks: TranscriptChunk[] = []
@@ -93,6 +93,13 @@ export async function prepareArtifacts(transcript: TranscriptResult, out: string
   await mkdir(directory, { recursive: false, mode: 0o700 })
   await mkdir(join(directory, 'chunks'))
   await mkdir(join(directory, 'maps'))
+  if (transcript.transcription) {
+    await mkdir(join(directory, 'asr'))
+    const artifacts = { json: 'asr/whisper.json', srt: 'asr/whisper.srt', text: 'asr/whisper.txt' }
+    for (const key of ['json', 'srt', 'text'] as const) await copyFile(transcript.transcription.artifacts[key], join(directory, artifacts[key]))
+    transcript = { ...transcript, transcription: { ...transcript.transcription, artifacts } }
+    provenance = { kind: 'local-asr', ...transcript.transcription }
+  }
   await writeFile(join(directory, 'transcript.json'), JSON.stringify(transcript, null, 2))
   const entries = []
   for (const [i, chunk] of chunks.entries()) {

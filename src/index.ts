@@ -8,6 +8,8 @@
  */
 export { createVideoSummarizer } from './summarizer'
 export type { VideoSummarizer, VideoSummarizerOptions } from './summarizer'
+export { doctorLocalTranscription, setupLocalTranscription } from './transcription'
+export type { LocalTranscriptionOptions, LocalModel, AsrTool } from './transcription/types'
 
 // Caption extraction
 export { fetchTranscript } from './subtitles'
@@ -126,6 +128,8 @@ export type {
   SummarizeInput,
   CommonSubtitleItem,
   TranscriptResult,
+  CaptionStatus,
+  TranscriptionMetadata,
   ChatRole,
   ChatMessage,
   BuiltPrompt,
