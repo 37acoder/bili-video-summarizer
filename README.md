@@ -240,6 +240,8 @@ macOS 使用已有 Homebrew，只补齐缺失的 `yt-dlp`、`ffmpeg`（含 ffpro
 
 平台返回 CAPTIONS_INVALID 时可显式 --caption-retries 3，在同一前台进程最多重试三次；HTTP、鉴权、解析和取消不重试，也不将异常当作无字幕。输出目录已有内容时保留并换新目录。章节按最早要点定位，转录纠错的语境猜测必须标为未核实。
 
+总结后执行 `verify-summary --manifest <manifest.json> --summary <summary.md> --chapters <chapters.json>`，校验原标题、章节引文、起点与正文 item 引用，以及待核对的确定纠错措辞。返回 valid=true 后仍须有界核对语义支持，程序校验不证明转录准确。
+
 CLI 只准备素材；总结仍按现有分块流程由 Agent 生成，标明本地自动转录及疑点。HTTP、鉴权、解析和字幕身份校验失败不会触发 ASR；空识别结果不会生成成功任务。B站的字幕接口可能返回与目标不符的字幕，应修复或稍后重试，不能强行当作无字幕。YouTube 空列表仅表明 savesubs 当前未提供可用字幕。
 
 ## 可选：库 API
