@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createVideoSummarizer } from '../src/summarizer'
 import { SummarizeError } from '../src/errors'
+import { getByteLength } from '../src/transcript/small-size-transcripts'
 import type { FetchLike, LlmClient } from '../src/types'
 
 function jsonResponse(data: unknown): Response {
@@ -114,6 +115,100 @@ describe('createVideoSummarizer', () => {
     await expect(summarizer.buildPrompt({ video: { source: 'youtube', videoId: 'no-subs' } })).rejects.toBeInstanceOf(
       SummarizeError,
     )
+  })
+
+  it('keeps the whole transcript instead of randomly dropping lines', async () => {
+    const llm = fakeLlm()
+    const paragraphs = Array.from({ length: 600 }, (_, i) => `句子${i}内容`).join('\r\n\r\n')
+    const routes: Route[] = [
+      {
+        match: (url) => url.includes('/action/extract'),
+        handler: () => jsonResponse({ response: { title: 'Long', formats: [{ quality: 'English', url: '/sub/long' }] } }),
+      },
+      {
+        match: (url) => url.includes('/sub/long') && url.includes('ext=txt'),
+        handler: () => new Response(paragraphs),
+      },
+    ]
+    const summarizer = createVideoSummarizer({ llmClient: llm, fetch: makeFetch(routes) })
+
+    const transcript = await summarizer.fetchTranscript({ video: { source: 'youtube', videoId: 'long' } })
+    expect(getByteLength(transcript.transcriptText)).toBeGreaterThan(6200)
+    expect(transcript.transcriptText).toContain('句子0内容')
+    expect(transcript.transcriptText).toContain('句子599内容')
+  })
+
+  it('summarizes long transcripts with map-reduce (multiple LLM calls)', async () => {
+    const llm = fakeLlm('merged summary')
+    const summarizer = createVideoSummarizer({ llmClient: llm, cache: false })
+    const groups = Array.from({ length: 30 }, (_, i) => ({ text: `第${i}段`.padEnd(300, '字'), index: i }))
+    const transcript = {
+      title: '长视频',
+      videoId: 'long',
+      source: 'bilibili' as const,
+      subtitlesArray: groups,
+      transcriptText: groups.map((g) => g.text).join(' '),
+      usedDescription: false,
+    }
+
+    const summary = await summarizer.summarize({
+      video: { source: 'bilibili', videoId: 'long' },
+      options: { model: 'gpt-3.5-turbo' }, // 16k window => the 30-group transcript needs >1 segment
+      transcript,
+    })
+
+    expect(summary).toBe('merged summary')
+    // At least 2 map calls plus 1 reduce call.
+    expect(llm.generate.mock.calls.length).toBeGreaterThan(2)
+  })
+
+  it('reports the map-reduce plan from buildPrompt', async () => {
+    const summarizer = createVideoSummarizer({ llmClient: fakeLlm(), cache: false })
+    const groups = Array.from({ length: 30 }, (_, i) => ({ text: `第${i}段`.padEnd(300, '字'), index: i }))
+    const transcript = {
+      title: '长视频',
+      videoId: 'long',
+      source: 'bilibili' as const,
+      subtitlesArray: groups,
+      transcriptText: groups.map((g) => g.text).join(' '),
+      usedDescription: false,
+    }
+
+    const built = await summarizer.buildPrompt({
+      video: { source: 'bilibili', videoId: 'long' },
+      options: { model: 'gpt-3.5-turbo' },
+      transcript,
+    })
+
+    expect(built.chunks).toBe(2)
+    expect(built.stages?.map((s) => s.kind)).toEqual(['map', 'map'])
+    expect(built.prompt).toContain('Segment: 1/2')
+  })
+
+  it('disables the reasoning phase by default for deepseek-flash', async () => {
+    const llm = fakeLlm()
+    const summarizer = createVideoSummarizer({ llmClient: llm, fetch: makeFetch(youtubeRoutes), cache: false })
+
+    await summarizer.summarize({ video: { source: 'youtube', videoId: 'flash' } })
+
+    expect(llm.generate.mock.calls[0]?.[0]).toMatchObject({ model: 'deepseek-flash', reasoningEffort: 'none' })
+  })
+
+  it('lets callers override the reasoning effort and leaves other models unset', async () => {
+    const llm = fakeLlm()
+    const summarizer = createVideoSummarizer({ llmClient: llm, fetch: makeFetch(youtubeRoutes), cache: false })
+
+    await summarizer.summarize({
+      video: { source: 'youtube', videoId: 'o1' },
+      options: { model: 'gpt-4o', reasoningEffort: 'high' },
+    })
+    await summarizer.summarize({
+      video: { source: 'youtube', videoId: 'o2' },
+      options: { model: 'gpt-4o' },
+    })
+
+    expect(llm.generate.mock.calls[0]?.[0]).toMatchObject({ model: 'gpt-4o', reasoningEffort: 'high' })
+    expect(llm.generate.mock.calls[1]?.[0]?.reasoningEffort).toBeUndefined()
   })
 
   it('extracts Bilibili captions through the official APIs', async () => {

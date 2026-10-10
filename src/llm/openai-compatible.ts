@@ -56,6 +56,13 @@ export function createOpenAICompatibleClient(config: LlmConfig = {}, logger: Log
 
   const provider = createOpenAICompatible({ name: providerName, baseURL, apiKey })
 
+  /** Forward the reasoning effort through the provider options seam. */
+  function providerOptions(params: GenerateParams) {
+    return params.reasoningEffort
+      ? { openaiCompatible: { reasoningEffort: params.reasoningEffort } }
+      : undefined
+  }
+
   return {
     async generate(params: GenerateParams): Promise<string> {
       const result = await generateText({
@@ -66,6 +73,7 @@ export function createOpenAICompatibleClient(config: LlmConfig = {}, logger: Log
         topP: params.topP,
         frequencyPenalty: params.frequencyPenalty,
         presencePenalty: params.presencePenalty,
+        providerOptions: providerOptions(params),
         abortSignal: params.signal,
       })
       return trimResult(result.text)
@@ -80,6 +88,7 @@ export function createOpenAICompatibleClient(config: LlmConfig = {}, logger: Log
         topP: params.topP,
         frequencyPenalty: params.frequencyPenalty,
         presencePenalty: params.presencePenalty,
+        providerOptions: providerOptions(params),
         abortSignal: params.signal,
       })
       return result.textStream

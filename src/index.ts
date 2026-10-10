@@ -28,12 +28,51 @@ export {
   DEFAULT_TRANSCRIPT_BYTE_LIMIT,
 } from './transcript/small-size-transcripts'
 
+// Transcript chunking (map-reduce)
+export {
+  splitTranscript,
+  seamText,
+  DEFAULT_EDGE_LINES,
+} from './transcript/chunk-transcript'
+export type { TranscriptChunk, SplitTranscriptOptions } from './transcript/chunk-transcript'
+
+// Map-reduce summarization
+export {
+  summarizeMapReduce,
+  summarizeMapReduceStream,
+  resolveTranscriptChunks,
+  resolveChunkTokenBudget,
+  transcriptDurationSeconds,
+  DEFAULT_CONTEXT_RATIO,
+  PROMPT_OVERHEAD_TOKENS,
+} from './summarize/map-reduce'
+export type {
+  MapReduceDeps,
+  MapReduceResult,
+  MapReduceTranscript,
+} from './summarize/map-reduce'
+
+// Token estimation
+export { estimateTokens } from './utils/tokens'
+
+// Model metadata
+export {
+  MODEL_CONTEXT_WINDOWS,
+  DEFAULT_CONTEXT_WINDOW,
+  resolveContextWindow,
+  defaultReasoningEffort,
+} from './llm/model-context'
+
 // Prompt building
 export {
   buildUserPrompt,
+  buildOutlinePrompt,
   getUserSubtitlePrompt,
   getUserSubtitleWithTimestampPrompt,
+  buildMapPrompt,
+  buildReducePrompt,
   resolveMaxOutputTokens,
+  resolveTargetSections,
   DEFAULT_MODEL,
 } from './prompt/prompt'
 export {
@@ -80,6 +119,7 @@ export type {
   ChatRole,
   ChatMessage,
   BuiltPrompt,
+  BuiltPromptStage,
   GenerateParams,
   LlmClient,
   CacheStore,

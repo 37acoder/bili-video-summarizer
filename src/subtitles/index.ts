@@ -5,7 +5,6 @@
  * `lib/openai/buildSummarizeRequest.ts`.
  */
 import type { ResolvedSubtitleConfig } from '../config'
-import { getSmallSizeTranscripts } from '../transcript/small-size-transcripts'
 import type { SummarizeInput, TranscriptResult } from '../types'
 import { fetchBilibiliTranscript } from './bilibili'
 import type { SubtitleFetchContext, SubtitleFetchResult } from './types'
@@ -14,8 +13,8 @@ import { fetchYoutubeTranscript } from './youtube'
 export type { SubtitleFetchContext, SubtitleFetchResult } from './types'
 
 /**
- * Fetch captions for the requested video and assemble the final transcript text
- * (size-limited) that will be embedded in the prompt.
+ * Fetch captions for the requested video and assemble the full transcript text
+ * that will be fed to the map-reduce summarizer.
  */
 export async function fetchTranscript(
   input: SummarizeInput,
@@ -32,9 +31,15 @@ export async function fetchTranscript(
 
   const { title, subtitlesArray, descriptionText } = result
   const usedDescription = !subtitlesArray || subtitlesArray.length === 0
+  // The full transcript is carried forward (no random line dropping); the
+  // map-reduce stage chunks it to fit the model's context window.
   const transcriptText = usedDescription
     ? (descriptionText ?? '')
-    : getSmallSizeTranscripts(subtitlesArray, subtitlesArray, config.transcriptByteLimit)
+    : subtitlesArray
+        .slice()
+        .sort((a, b) => a.index - b.index)
+        .map((item) => item.text)
+        .join(' ')
 
   return {
     title,

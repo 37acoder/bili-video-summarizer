@@ -6,8 +6,11 @@ videos the same way [BibiGPT-v1](https://github.com/JimmyLv/BibiGPT) does:
 ```
 video request
   → fetch captions        (YouTube via savesubs.com, Bilibili via official APIs)
-  → size-limit transcript (~6.2 KB byte budget)
-  → build prompt          (title + transcript + instructions)
+  → map-reduce            (split the transcript at 50% of the model context
+                          window; summarize each segment; merge segment
+                          summaries while carrying the accumulated summary and
+                          the raw subtitles around each segment seam)
+  → build prompt
   → call an OpenAI-compatible LLM
   → cache the result
 ```
@@ -39,7 +42,7 @@ const summarizer = createVideoSummarizer({
   llm: {
     apiKey: process.env.OPENAI_COMPATIBLE_API_KEY,
     baseUrl: process.env.OPENAI_COMPATIBLE_BASE_URL, // any OpenAI-compatible endpoint
-    model: 'gpt-3.5-turbo',
+    model: 'deepseek-flash',
   },
   subtitle: {
     savesubsAuthToken: process.env.SAVESUBS_X_AUTH_TOKEN,
@@ -69,15 +72,41 @@ const transcript = await summarizer.fetchTranscript({ video: { source: 'youtube'
 | --- | --- |
 | `summarize(input)` | Fetch captions, prompt the LLM, return the full summary text. |
 | `summarizeStream(input)` | Same, but returns `AsyncIterable<string>`. |
-| `buildPrompt(input)` | Resolve the caption + prompt + model into a `BuiltPrompt` (no LLM call). |
-| `fetchTranscript(input)` | Return the extracted, size-limited transcript. |
+| `buildPrompt(input)` | Resolve the caption + prompt + model into a `BuiltPrompt` (no LLM call). For long transcripts it returns the first *map* prompt and lists the rest under `stages`. |
+| `fetchTranscript(input)` | Return the extracted transcript (the full text; chunking happens at summarize time). |
 | `cacheKey(input)` | Deterministic cache key for a request. |
 
 `input` is `{ video: { source: 'youtube' | 'bilibili', videoId, pageNumber? }, options? }`.
 
 `options` maps to BibiGPT's UI controls: `model`, `outputLanguage`,
 `detailLevel`, `sentenceNumber`, `outlineLevel`, `showTimestamp`, `showEmoji`,
-plus `maxOutputTokens`, sampling params and an `AbortSignal`.
+plus `summaryFormat`, `maxOutputTokens`, `reasoningEffort`, sampling params and
+an `AbortSignal`.
+
+### Summary format
+
+The default output is a **chaptered outline** whose length adapts to the video:
+
+```
+## 一句话总结 / ## Summary
+<one sentence>
+## 章节要点 / ## Chapters
+### [mm:ss] <chapter title>
+- <1-3 key points>
+...
+## 关键结论 / ## Key Takeaways
+- <conclusions / actions>
+```
+
+- The chapter count is derived from the duration (~1 chapter per two minutes)
+  or the transcript size, clamped to 1–12; an explicit `sentenceNumber`
+  overrides it. `maxOutputTokens` scales with the chapter count so the outline
+  is not truncated.
+- Set `summaryFormat: 'bullets'` to restore the original BibiGPT
+  `## Summary / ## Highlights` bullet template.
+- For long transcripts the same outline is produced via map-reduce: segments are
+  summarized, then a rolling reduce merges them (chapter count computed from the
+  full transcript, seam subtitles preserved).
 
 ### Injection points
 
@@ -104,6 +133,7 @@ Falls back to these when not passed in code — see `.env.example`.
 | `OPENAI_COMPATIBLE_API_KEY` / `OPENAI_API_KEY` | LLM key |
 | `OPENAI_COMPATIBLE_BASE_URL` | LLM base URL |
 | `OPENAI_COMPATIBLE_MODEL` | default model |
+| `OPENAI_COMPATIBLE_REASONING_EFFORT` | reasoning/thinking effort (`none` disables the hidden thinking phase; recommended for DeepSeek-style reasoning models used for summarization) |
 | `SAVESUBS_X_AUTH_TOKEN` | savesubs.com auth token (YouTube) |
 | `SAVESUBS_BASE_URL` | savesubs.com base URL |
 | `BILIBILI_SESSION_TOKEN` | Bilibili SESSDATA cookie (comma-separated to rotate) |
@@ -118,6 +148,10 @@ Falls back to these when not passed in code — see `.env.example`.
 | `src/subtitles/bilibili.ts` | `lib/bilibili/fetchBilibiliSubtitle*.ts` |
 | `src/subtitles/reduce-subtitle-timestamp.ts` | `utils/reduceSubtitleTimestamp.ts` |
 | `src/transcript/small-size-transcripts.ts` | `lib/openai/getSmallSizeTranscripts.ts` |
+| `src/transcript/chunk-transcript.ts` | new — token-budget chunking (no upstream equivalent) |
+| `src/summarize/map-reduce.ts` | new — map-reduce orchestration (no upstream equivalent) |
+| `src/llm/model-context.ts` | new — model context windows |
+| `src/utils/tokens.ts` | new — conservative token estimation |
 | `src/prompt/prompt.ts` | `lib/openai/prompt.ts` |
 | `src/prompt/language.ts` | `utils/constants/language.ts` |
 | `src/llm/openai-compatible.ts` | `lib/openai/fetchOpenAIResult.ts` + `trimOpenAiResult.ts` |
@@ -141,6 +175,23 @@ Falls back to these when not passed in code — see `.env.example`.
   mismatched (wrong-video) caption file (upstream trusted the first response).
 - `SummarizeInput.transcript` lets callers pass a pre-fetched transcript so
   captions are only extracted once per request.
+- **Map-reduce instead of random truncation.** Upstream dropped transcript lines
+  at random once a ~6.2 KB byte budget was exceeded, so long videos silently lost
+  content (and produced different summaries on every run). Long transcripts are
+  now split into segments capped at **50% of the model's context window**
+  (`resolveContextWindow`), summarized segment-by-segment, and merged with a
+  rolling reduce that carries the accumulated summary plus the raw subtitles
+  around each segment seam. The default model is `deepseek-flash` (1,048,576-token
+  context); override it per request with `options.model`.
+- **Chaptered outline by default.** Output is a chaptered outline (one-sentence
+  summary → timestamped chapters → key takeaways) whose length adapts to the
+  video (see "Summary format"), instead of a fixed number of flat bullets.
+  `summaryFormat: 'bullets'` restores the upstream template.
+- **Reasoning-aware LLM calls.** Some models (DeepSeek V4.1 Flash) emit a hidden
+  reasoning phase that otherwise consumes the whole output budget and returns an
+  empty answer. `reasoningEffort` is forwarded as `reasoning_effort`, and
+  `deepseek-flash` defaults to `none` for summarization; override with
+  `options.reasoningEffort` or `OPENAI_COMPATIBLE_REASONING_EFFORT`.
 - `formatSummary` (a UI-only bullet/timestamp renderer) is intentionally not
   ported.
 
@@ -148,8 +199,15 @@ Falls back to these when not passed in code — see `.env.example`.
 
 - Summaries are only as good as the captions. Silent videos fall back to the
   description; videos with neither throw `SummarizeError` with `code: 'NO_TRANSCRIPT'`.
-- The transcript size limiter **drops lines at random** when over budget
-  (upstream behavior), so very long videos can lose content.
+- **Token counting is an estimate.** There is no tokenizer dependency; CJK
+  characters are counted at 1 token each and other text at ~4 characters per
+  token (`estimateTokens`). The estimate errs high for CJK, so a segment never
+  overflows the context window — at the cost of occasionally splitting when a
+  precise count would have fit. Very long inputs therefore cost multiple LLM
+  calls (one map call per segment plus one reduce call per merge).
+- A single failed map segment is logged and skipped rather than failing the whole
+  summary; a failed reduce step keeps the accumulated summary from the previous
+  step. If every segment fails, the request throws.
 - YouTube caption extraction depends on the third-party savesubs.com service.
 
 ## License

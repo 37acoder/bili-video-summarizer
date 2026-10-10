@@ -36,10 +36,21 @@ export interface SummarizeOptions {
   showTimestamp?: boolean
   /** Ask the model to pick an emoji per bullet. */
   showEmoji?: boolean
+  /**
+   * Output format. Defaults to `'outline'` (a chaptered outline whose length
+   * adapts to the video); `'bullets'` restores the original BibiGPT template.
+   */
+  summaryFormat?: 'outline' | 'bullets'
   /** Whether the caller intends to consume a stream (informational). */
   enableStream?: boolean
   /** Explicit override for the max output tokens. */
   maxOutputTokens?: number
+  /**
+   * Provider reasoning/thinking effort (`none`, `low`, `medium`, `high`, ...).
+   * Some models (e.g. DeepSeek V4.1 Flash) emit a hidden reasoning phase that
+   * otherwise consumes the whole output budget and leaves the answer empty.
+   */
+  reasoningEffort?: string
   temperature?: number
   topP?: number
   frequencyPenalty?: number
@@ -90,6 +101,13 @@ export interface ChatMessage {
   content: string
 }
 
+/** One planned LLM call in a summarize request. */
+export interface BuiltPromptStage {
+  /** `single` = one final pass; `map` = per-segment summary; `reduce` = merge step. */
+  kind: 'single' | 'map' | 'reduce'
+  prompt: string
+}
+
 /** Fully-resolved payload ready to hand to an LLM client. */
 export interface BuiltPrompt {
   videoId: string
@@ -100,6 +118,13 @@ export interface BuiltPrompt {
   /** Convenience alias for `messages[0].content` when a single user message is used. */
   prompt: string
   maxOutputTokens: number
+  /** Number of map segments the transcript was split into (1 = single pass). */
+  chunks?: number
+  /**
+   * The planned prompt stages. Reduce prompts depend on the summaries produced
+   * at runtime, so only the leading stage's concrete prompt is guaranteed.
+   */
+  stages?: BuiltPromptStage[]
 }
 
 /** Parameters passed to an `LlmClient`. */
@@ -107,6 +132,8 @@ export interface GenerateParams {
   model: string
   messages: ChatMessage[]
   maxOutputTokens: number
+  /** Provider reasoning/thinking effort; when set, forwarded as `reasoning_effort`. */
+  reasoningEffort?: string
   temperature?: number
   topP?: number
   frequencyPenalty?: number

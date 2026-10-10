@@ -8,6 +8,11 @@ export interface LlmConfig {
   baseUrl?: string
   model?: string
   providerName?: string
+  /**
+   * Default provider reasoning/thinking effort. Forwarded as `reasoning_effort`.
+   * Set to `none` for DeepSeek-style reasoning models used for summarization.
+   */
+  reasoningEffort?: string
 }
 
 /** Configuration for subtitle extraction. */

@@ -9,12 +9,10 @@
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 import {
-  buildUserPrompt,
   createVideoSummarizer,
   getByteLength,
-  getSmallSizeTranscripts,
   reduceBilibiliSubtitleTimestamp,
-  resolveMaxOutputTokens,
+  resolveContextWindow,
   type CommonSubtitleItem,
   type SummarizeOptions,
   type TranscriptResult,
@@ -25,7 +23,6 @@ const UA =
 
 const OPTIONS: SummarizeOptions = {
   outputLanguage: 'zh-CN',
-  sentenceNumber: 5,
   detailLevel: 600,
   showTimestamp: true,
 }
@@ -105,15 +102,8 @@ async function main() {
   // 3. reproduce the pipeline outputs from the raw caption
   const attemptsUsed = rawBody.length ? attempt : attempt - 1
   const subtitlesArray: CommonSubtitleItem[] = reduceBilibiliSubtitleTimestamp(rawBody as any, OPTIONS.showTimestamp)
-  const transcriptText = getSmallSizeTranscripts(subtitlesArray, subtitlesArray)
+  const transcriptText = subtitlesArray.map((item) => item.text).join(' ')
   const transcriptBytes = getByteLength(transcriptText)
-  const prompt = buildUserPrompt({
-    title: view.title,
-    transcript: transcriptText,
-    options: OPTIONS,
-    transcriptByteLimit: undefined,
-  })
-  const maxOutputTokens = resolveMaxOutputTokens(OPTIONS, false)
 
   const transcript: TranscriptResult = {
     title: view.title,
@@ -128,6 +118,11 @@ async function main() {
     llm: { model: process.env.OPENAI_COMPATIBLE_MODEL },
     cache: false,
   })
+  const model = process.env.OPENAI_COMPATIBLE_MODEL ?? ''
+  const contextWindow = resolveContextWindow(model)
+  const built = await summarizer.buildPrompt({ video: { source: 'bilibili', videoId }, options: OPTIONS, transcript })
+  const prompt = built.prompt
+  const maxOutputTokens = built.maxOutputTokens
   const summary = await summarizer.summarize({ video: { source: 'bilibili', videoId }, options: OPTIONS, transcript })
 
   // 4. write outputs
@@ -160,6 +155,13 @@ async function main() {
       byteLength: transcriptBytes,
       text: transcriptText,
       groups: subtitlesArray,
+    },
+    mapReduce: {
+      chunkCount: built.chunks ?? 1,
+      contextWindow,
+      contextRatio: 0.5,
+      model,
+      stages: (built.stages ?? []).map((stage) => stage.kind),
     },
     llm: {
       provider: 'openai-compatible',
@@ -194,7 +196,10 @@ async function main() {
   lines.push(`- 原始行数: ${rawBody.length}，校验: 末行 ${rawBody[rawBody.length - 1]?.from}s vs 视频 ${duration}s`)
   lines.push('')
   lines.push('## 入库转录（分组后，即真正送进 Prompt 的文本）')
-  lines.push(`- 组数: ${subtitlesArray.length}  字节数: ${transcriptBytes}（上限 6200 字节）`)
+  lines.push(`- 组数: ${subtitlesArray.length}  字节数: ${transcriptBytes}（完整，不再随机丢弃）`)
+  lines.push(
+    `- 分段: ${built.chunks ?? 1} 段（模型 ${model || '(默认)'}，上下文 ${contextWindow} tokens，单段上限 ≈ ${Math.floor(contextWindow * 0.5)} tokens）`,
+  )
   lines.push('')
   lines.push('```')
   lines.push(transcriptText)
@@ -205,7 +210,7 @@ async function main() {
   lines.push(JSON.stringify({ baseUrl: process.env.OPENAI_COMPATIBLE_BASE_URL, model: process.env.OPENAI_COMPATIBLE_MODEL, maxOutputTokens, options: OPTIONS }, null, 2))
   lines.push('```')
   lines.push('')
-  lines.push('## 完整 Prompt')
+  lines.push('## 首段 Prompt（map-reduce 首步；完整分段见 source.json）')
   lines.push('```')
   lines.push(prompt)
   lines.push('```')
@@ -219,7 +224,7 @@ async function main() {
   await writeFile(`review/${videoId}.md`, lines.join('\n'))
 
   console.log(`videoId=${videoId} title=${view.title}`)
-  console.log(`caption lan=${chosen.lan} rawLines=${rawBody.length} groups=${subtitlesArray.length} bytes=${transcriptBytes} attempts=${attemptsUsed}`)
+  console.log(`caption lan=${chosen.lan} rawLines=${rawBody.length} groups=${subtitlesArray.length} bytes=${transcriptBytes} chunks=${built.chunks ?? 1} attempts=${attemptsUsed}`)
   console.log(`wrote review/${videoId}.md and review/${videoId}.source.json`)
 }
 

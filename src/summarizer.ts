@@ -3,22 +3,41 @@
  *
  *   video request
  *     -> fetch captions (YouTube / Bilibili)
- *     -> size-limit the transcript
- *     -> build the prompt
+ *     -> split the transcript into model-sized segments (map-reduce)
+ *     -> build the prompt(s)
  *     -> call an OpenAI-compatible LLM (optionally streaming)
  *     -> (optionally) cache the result
  *
- * Every external dependency (LLM, fetch, cache, logger) is injectable, so the
- * module can be dropped into a Next.js route, a worker, or a CLI.
+ * Long transcripts used to be randomly truncated to a fixed byte budget. They
+ * are now summarized with map-reduce: each segment (capped at a fraction of the
+ * model's context window) is summarized independently, then the segment
+ * summaries are merged while carrying the accumulated context forward. Every
+ * external dependency (LLM, fetch, cache, logger) is injectable.
  */
 import { createMemoryCache, getCacheId } from './cache'
 import { resolveSubtitleConfig, type LlmConfig, type SubtitleConfig } from './config'
 import { SummarizeError } from './errors'
 import { createOpenAICompatibleClient, trimResult } from './llm/openai-compatible'
-import { buildUserPrompt, DEFAULT_MODEL, resolveMaxOutputTokens } from './prompt/prompt'
+import { resolveContextWindow, defaultReasoningEffort } from './llm/model-context'
+import {
+  buildMapPrompt,
+  buildUserPrompt,
+  DEFAULT_MODEL,
+  OUTLINE_TOKENS_PER_SECTION,
+  resolveMaxOutputTokens,
+  resolveTargetSections,
+} from './prompt/prompt'
+import {
+  resolveTranscriptChunks,
+  summarizeMapReduce,
+  summarizeMapReduceStream,
+  transcriptDurationSeconds,
+  type MapReduceDeps,
+} from './summarize/map-reduce'
 import { fetchTranscript } from './subtitles'
 import type {
   BuiltPrompt,
+  BuiltPromptStage,
   CacheStore,
   FetchLike,
   GenerateParams,
@@ -48,9 +67,9 @@ export interface VideoSummarizerOptions {
 }
 
 export interface VideoSummarizer {
-  /** Fetch captions and produce the final (size-limited) transcript text. */
+  /** Fetch captions and produce the final transcript text. */
   fetchTranscript(input: SummarizeInput): Promise<TranscriptResult>
-  /** Build the fully-resolved prompt without calling the LLM. */
+  /** Build the fully-resolved prompt (without calling the LLM). */
   buildPrompt(input: SummarizeInput): Promise<BuiltPrompt>
   /** Deterministic cache key for a request. */
   cacheKey(input: SummarizeInput): string
@@ -60,13 +79,18 @@ export interface VideoSummarizer {
   summarizeStream(input: SummarizeInput): Promise<AsyncIterable<string>>
 }
 
-function llmParams(options: SummarizeOptions = {}): Omit<GenerateParams, 'model' | 'messages' | 'maxOutputTokens'> {
+type SamplingParams = Pick<
+  GenerateParams,
+  'temperature' | 'topP' | 'frequencyPenalty' | 'presencePenalty' | 'reasoningEffort'
+>
+
+function samplingParams(options: SummarizeOptions = {}, reasoningEffort?: string): SamplingParams {
   return {
+    reasoningEffort,
     temperature: options.temperature,
     topP: options.topP,
     frequencyPenalty: options.frequencyPenalty,
     presencePenalty: options.presencePenalty,
-    signal: options.signal,
   }
 }
 
@@ -119,7 +143,18 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
     return fetchTranscript(input, subtitleConfig, { fetch: fetchImpl, config: subtitleConfig, logger })
   }
 
-  async function buildPrompt(input: SummarizeInput): Promise<BuiltPrompt> {
+  function resolveModel(input: SummarizeInput): string {
+    return input.options?.model ?? options.llm?.model ?? readEnv('OPENAI_COMPATIBLE_MODEL') ?? DEFAULT_MODEL
+  }
+
+  interface ResolvedRequest {
+    transcript: TranscriptResult
+    model: string
+    maxOutputTokens: number
+    deps: MapReduceDeps
+  }
+
+  async function resolveRequest(input: SummarizeInput): Promise<ResolvedRequest> {
     const { video } = input
     if (!video?.videoId) {
       throw new SummarizeError(500, 'NO_VIDEO_ID', 'No videoId in the request')
@@ -135,17 +170,70 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       throw new SummarizeError(501, 'NO_TRANSCRIPT', 'No subtitle in the video')
     }
 
-    const prompt = buildUserPrompt({
-      title: transcript.title,
-      transcript: transcript.transcriptText,
+    const model = resolveModel(input)
+    const durationSeconds = transcriptDurationSeconds(transcript.subtitlesArray)
+    const baseMaxOutputTokens = resolveMaxOutputTokens(input.options, hasUserKey)
+    // The chaptered outline needs more output room than the legacy bullets;
+    // scale it with the adaptive chapter count unless the caller pinned
+    // `maxOutputTokens` (or chose the bullets format).
+    const isOutline = (input.options?.summaryFormat ?? 'outline') === 'outline'
+    const maxOutputTokens =
+      input.options?.maxOutputTokens !== undefined || !isOutline
+        ? baseMaxOutputTokens
+        : Math.max(
+            baseMaxOutputTokens,
+            resolveTargetSections({
+              transcript: transcript.transcriptText,
+              durationSeconds,
+              explicit: input.options?.sentenceNumber,
+            }) * OUTLINE_TOKENS_PER_SECTION,
+          )
+    const reasoningEffort =
+      input.options?.reasoningEffort ??
+      options.llm?.reasoningEffort ??
+      readEnv('OPENAI_COMPATIBLE_REASONING_EFFORT') ??
+      defaultReasoningEffort(model)
+    const deps: MapReduceDeps = {
+      llm: client,
+      model,
       options: input.options,
-      transcriptByteLimit: subtitleConfig.transcriptByteLimit,
-    })
+      maxOutputTokens,
+      contextWindow: resolveContextWindow(model),
+      params: samplingParams(input.options, reasoningEffort),
+      signal: input.options?.signal,
+      logger,
+    }
+    return { transcript, model, maxOutputTokens, deps }
+  }
 
-    const model =
-      input.options?.model ?? options.llm?.model ?? readEnv('OPENAI_COMPATIBLE_MODEL') ?? DEFAULT_MODEL
-    const maxOutputTokens = resolveMaxOutputTokens(input.options, hasUserKey)
+  async function buildPrompt(input: SummarizeInput): Promise<BuiltPrompt> {
+    const { transcript, model, maxOutputTokens, deps } = await resolveRequest(input)
+    const { video } = input
 
+    const chunks = resolveTranscriptChunks(transcript, deps)
+    let stages: BuiltPromptStage[]
+    if (chunks.length <= 1) {
+      const prompt = buildUserPrompt({
+        title: transcript.title,
+        transcript: chunks[0]?.text ?? transcript.transcriptText,
+        options: input.options,
+        durationSeconds: transcriptDurationSeconds(transcript.subtitlesArray),
+      })
+      stages = [{ kind: 'single', prompt }]
+    } else {
+      stages = chunks.map((chunk, index) => ({
+        kind: 'map' as const,
+        prompt: buildMapPrompt({
+          title: transcript.title,
+          segmentText: chunk.text,
+          segmentIndex: index,
+          segmentCount: chunks.length,
+          options: input.options,
+        }),
+      }))
+    }
+
+    const prompt = stages[0]?.prompt ?? ''
     return {
       videoId: video.videoId,
       source: video.source,
@@ -154,6 +242,8 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       messages: [{ role: 'user', content: prompt }],
       prompt,
       maxOutputTokens,
+      chunks: chunks.length,
+      stages,
     }
   }
 
@@ -167,14 +257,9 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       }
     }
 
-    const built = await buildPrompt(input)
-    const raw = await client.generate({
-      model: built.model,
-      messages: built.messages,
-      maxOutputTokens: built.maxOutputTokens,
-      ...llmParams(input.options),
-    })
-    const result = trimResult(raw)
+    const { transcript, deps } = await resolveRequest(input)
+    const { summary } = await summarizeMapReduce(transcript, deps)
+    const result = trimResult(summary)
 
     if (cache) {
       try {
@@ -196,13 +281,8 @@ export function createVideoSummarizer(options: VideoSummarizerOptions = {}): Vid
       }
     }
 
-    const built = await buildPrompt(input)
-    const source = await client.stream({
-      model: built.model,
-      messages: built.messages,
-      maxOutputTokens: built.maxOutputTokens,
-      ...llmParams(input.options),
-    })
+    const { transcript, deps } = await resolveRequest(input)
+    const source = await summarizeMapReduceStream(transcript, deps)
     return streamWithCache(source, key, cache, logger)
   }
 
