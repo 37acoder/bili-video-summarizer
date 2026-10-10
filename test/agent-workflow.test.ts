@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { mkdtemp, readFile, rm, stat, writeFile, readdir } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, stat, writeFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
@@ -169,6 +169,10 @@ globalThis.fetch=async url=>{
     await writeFile(summary, '# 测试\n### [00:49] 主题\n- 第一条要点（item 0）\n- 第二条要点（item 1）\n')
     await writeFile(chapters, JSON.stringify([{ heading: '主题', sourceItemIndex: 0, sourceStartSeconds: 49, sourceQuote: '第一条要点' }]))
     expect(JSON.parse((await run(process.execPath, args)).stdout).valid).toBe(true)
+    await mkdir(join(output, 'reduce'))
+    const reduction = join(output, 'reduce/group.md'); await writeFile(reduction, '原文应为猜测')
+    await expect(run(process.execPath, args)).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('CORRECTION_REQUIRES_REVIEW') })
+    await writeFile(reduction, '原文可能有误，未核实')
     await writeFile(summary, '# 测试\n### [00:49] 主题\n- 原文应为猜测（item 0）\n')
     await expect(run(process.execPath, args)).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('CORRECTION_REQUIRES_REVIEW') })
   })

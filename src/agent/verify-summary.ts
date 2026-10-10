@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 
 /** Structural evidence checks; semantic support still requires reading the cited items. */
@@ -13,6 +13,13 @@ export async function verifySummary(manifestPath: string, summaryPath: string, c
     const data = JSON.parse(await readFile(resolve(directory, chunk.file), 'utf8'))
     for (const item of data.items) items.set(item.index, item)
     if (manifest.chunkCount > 1) notes.push({ file: chunk.mapFile, text: await readFile(resolve(directory, chunk.mapFile), 'utf8') })
+  }
+  const reductions = await readdir(resolve(directory, 'reduce')).catch(error => {
+    if (error.code === 'ENOENT') return []
+    throw error
+  })
+  for (const file of reductions.filter(file => file.endsWith('.md'))) {
+    notes.push({ file: 'reduce/' + file, text: await readFile(resolve(directory, 'reduce', file), 'utf8') })
   }
   const summary = await readFile(summaryPath, 'utf8')
   const raw = JSON.parse(await readFile(chaptersPath, 'utf8'))

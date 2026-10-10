@@ -5358,6 +5358,13 @@ async function verifySummary(manifestPath, summaryPath, chaptersPath) {
     for (const item of data.items) items.set(item.index, item);
     if (manifest.chunkCount > 1) notes.push({ file: chunk.mapFile, text: await (0, import_promises3.readFile)((0, import_node_path3.resolve)(directory, chunk.mapFile), "utf8") });
   }
+  const reductions = await (0, import_promises3.readdir)((0, import_node_path3.resolve)(directory, "reduce")).catch((error) => {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  });
+  for (const file of reductions.filter((file2) => file2.endsWith(".md"))) {
+    notes.push({ file: "reduce/" + file, text: await (0, import_promises3.readFile)((0, import_node_path3.resolve)(directory, "reduce", file), "utf8") });
+  }
   const summary = await (0, import_promises3.readFile)(summaryPath, "utf8");
   const raw = JSON.parse(await (0, import_promises3.readFile)(chaptersPath, "utf8"));
   const chapters = Array.isArray(raw) ? raw : raw.chapters;
