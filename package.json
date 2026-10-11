@@ -22,6 +22,7 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:doubao": "python3 test/doubao_skill_integration.py",
     "test:watch": "vitest",
     "example": "tsx examples/basic.ts",
     "build:skill": "node scripts/build-skill.mjs"

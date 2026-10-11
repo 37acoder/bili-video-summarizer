@@ -7,11 +7,12 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)))
 const skill = join(root, 'skills/video-summarizer')
 await import('./package-article-assets.mjs')
 await Promise.all(['SKILL.md', 'agents/openai.yaml', 'references/setup.md', 'references/bilibili-auth.md',
-  'references/summarization.md', 'references/execution.md', 'references/local-transcription.md', 'references/asr-installation.md',
+  'references/summarization.md', 'references/execution.md', 'references/local-transcription.md', 'references/asr-installation.md', 'references/doubao-transcription.md',
   'references/text-summary.md', 'references/illustrated-summary.md', 'references/visual-evidence.md',
   'references/article-profiles.md', 'scripts/prepare-article.mjs', 'assets/article/catalog.json']
   .map(file => access(join(skill, file))))
 await mkdir(join(skill, 'scripts'), { recursive: true })
+await copyFile(join(root, 'scripts/doubao-transcribe.py'), join(skill, 'scripts/doubao-transcribe.py'))
 await build({ entryPoints: [join(root, 'src/agent/cli.ts')], outfile: join(skill, 'scripts/video-source.cjs'),
   bundle: true, platform: 'node', target: 'node22', format: 'cjs', minify: false, legalComments: 'eof' })
 await copyFile(join(root, 'LICENSE'), join(skill, 'LICENSE'))

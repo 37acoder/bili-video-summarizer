@@ -244,6 +244,14 @@ macOS 使用已有 Homebrew，只补齐缺失的 `yt-dlp`、`ffmpeg`（含 ffpro
 
 CLI 只准备素材；总结仍按现有分块流程由 Agent 生成，标明本地自动转录及疑点。HTTP、鉴权、解析和字幕身份校验失败不会触发 ASR；空识别结果不会生成成功任务。B站的字幕接口可能返回与目标不符的字幕，应修复或稍后重试，不能强行当作无字幕。YouTube 空列表仅表明 savesubs 当前未提供可用字幕。
 
+## 可选：豆包云端转录
+
+无平台字幕时，用户可选择豆包作为另一种转录方案。开通火山引擎**流式语音识别2.0**，将语音 API KEY 存入本机私有的 `~/.config/video-summarizer/doubao.json`（`{"api_key":"实际密钥"}`，权限0600），即可让 Agent 使用豆包转录并继续总结。配置 key 本身不会触发上传，已有平台字幕与本地转录流程仍可使用。
+
+技能自带 `scripts/doubao-transcribe.py`，提供 `doctor/download/prepare/inspect`。除文字外，完整保存句/词时间戳、说话人、情绪、声音性别估计、语速、音量和语种，并按文本分块提供附加信息；情绪和身份相关字段只作为模型估计的辅助依据。成功结果按音频和参数缓存，失败会话不会自动重复上传。
+
+环境、命令、信息使用和恢复规则见 [豆包独立说明](skills/video-summarizer/references/doubao-transcription.md)，验证见 [技能接入验收](docs/validation/doubao-skill-integration.md)。这是技能的可选流式入口，库 API 与录音文件 AUC 批处理尚未接入豆包。
+
 ## 可选：库 API
 
 库的普通字幕路径保持不变。Node 环境中，传入 `localTranscription` 即启用同一回退流程，实例的 `fetchTranscript`、`buildPrompt`、`summarize` 和 `summarizeStream` 共用它；库自身不执行安装：
