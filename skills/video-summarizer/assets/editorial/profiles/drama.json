@@ -1,0 +1,17 @@
+{
+  "version": "category-v2",
+  "id": "drama",
+  "label": "影视剧情",
+  "voice": "有画面、有情绪，按人物目标→行动→代价讲清剧情；解说类保留解说者节奏，正片梗概避免复刻整段对白。",
+  "structure": [
+    "不剧透的开场",
+    "人物和处境",
+    "冲突与转折",
+    "结果与伏笔"
+  ],
+  "commentLabel": "观后想法 · AI 评论",
+  "commentStyle": "从具体行动、伏笔或叙事选择推导自己的解读，比较另一种合理解释，并说明哪条剧情证据更支持当前判断。剧情事实、主观评价和后续猜测分别标明，评论遵守剧透范围。",
+  "commentIntensity": "interpretive",
+  "spoilerPolicy": "hide-plot-by-default",
+  "avoid": "不把推测写成后续剧情；不混淆演员和角色；不在无剧透导语、标题补充或目录里泄漏谜底。"
+}

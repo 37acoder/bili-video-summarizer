@@ -26,7 +26,7 @@ npm ci
 npm run typecheck
 npm test
 npm run build:skill
-# 生成字幕CLI、豆包转录helper与assets/article，保留独立的prepare-article.mjs
+# 生成字幕CLI、豆包转录helper、assets/article与assets/editorial，保留独立的prepare-article.mjs
 ```
 
 源码是 TypeScript；开发依赖由 package-lock.json 固定。打包脚本把字幕获取器与登录/分块 CLI 一并编译为 CommonJS，运行不依赖原仓库路径。原有库的 `npm run build` 和 LLM API 模式可独立使用，技能默认不走这条路径。分发衍生包时保留 GPL-3.0 LICENSE、NOTICE 和第三方声明，源码在上述仓库的 src/agent 与 scripts/build-skill.mjs。
@@ -42,4 +42,4 @@ npm run build:skill
 
 ## 图文资产的维护
 
-编辑模板的事实源为仓库 examples/illustrated-summary/categories/profiles.json、base.css、themes.css及build-templates.mjs。npm run build:skill 自动生成并打包九组模板和分开的单类写作配置；不要手工维护技能中的生成副本。生成流程去掉合成demo正文，技能只携带写作合同和占位骨架。图文流程由宿主Agent执行取材、实际读图和填充；prepare/inspect仍负责文字素材，prepare-article仅展开所选骨架，不自动总结或证明已完成视觉理解。
+编辑模板的事实源为仓库 examples/illustrated-summary/categories/profiles.json、base.css、themes.css及build-templates.mjs。npm run build:skill 自动生成并打包九组模板；同一分类源同时生成assets/editorial/profiles内的轻量行文配置，供两种模式只读取所选类别。不要手工维护生成副本。生成流程去掉合成demo正文，技能只携带写作合同和占位骨架。图文流程由宿主Agent执行取材、实际读图和填充；prepare/inspect仍负责文字素材，prepare-article仅展开所选骨架，不自动总结或证明已完成视觉理解。
