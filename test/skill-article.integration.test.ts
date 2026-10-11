@@ -20,6 +20,24 @@ beforeAll(async () => {
 afterAll(async () => { if (scratch) await rm(scratch, { recursive: true, force: true }) })
 
 describe('portable article skill', () => {
+  it('provides the same editorial profiles in a portable text-only package without article assets', async () => {
+    const textSkill = join(scratch, 'text-only-skill')
+    await cp(skill, textSkill, { recursive: true })
+    await rm(join(textSkill, 'assets/article'), { recursive: true })
+    const writing = await readFile(join(textSkill, 'references/editorial-writing.md'), 'utf8')
+    const catalog = JSON.parse(await readFile(join(repository, 'examples/illustrated-summary/categories/profiles.json'), 'utf8'))
+    for (const profile of [...catalog.profiles, ...catalog.extensions]) {
+      const contractPath = `../assets/editorial/profiles/${profile.id}.json`
+      expect(writing).toContain(contractPath)
+      const contract = JSON.parse(await readFile(join(textSkill, 'references', contractPath), 'utf8'))
+      expect(contract).toMatchObject({ id: profile.id, voice: profile.voice,
+        structure: profile.structure, commentStyle: profile.commentStyle, spoilerPolicy: profile.spoilerPolicy })
+      expect(contract).not.toHaveProperty('visual')
+      expect(contract).not.toHaveProperty('imageStrategy')
+      expect(contract).not.toHaveProperty('demo')
+    }
+  })
+
   it('expands the selected profile with usable local style paths outside the repository', async () => {
     const output = join(scratch, 'tech-article')
     const result = prepare('tech', output)

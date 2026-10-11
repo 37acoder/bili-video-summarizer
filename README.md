@@ -8,11 +8,11 @@
 
 ## 默认图文与按需披露
 
-直接请求“总结这个视频”会走图文文章流程；“仅文字/不要图片”走文字章节总结，不加载视觉流程、分类配置或HTML样式。只指定Markdown仍可包含原帧。图文默认HTML阅读版加Markdown，用户指定格式时遵从。
+直接请求“总结这个视频”会走图文文章流程；“仅文字/不要图片”走文字文章总结，只加载共用行文规则及所选类别的轻量配置，不加载视觉流程、图片策略或HTML样式。只指定Markdown仍可包含原帧。图文默认HTML阅读版加Markdown，用户指定格式时遵从。
 
 图文过程是文字分块理解→按主题与时间筛选原帧→实际读图→联合写作→本地阅读验收。标题逐字保留原标题，新增AI评论单独标记；没有画面的讲座/播客用提纲、观点对照和回听索引。视频下载或读图能力不可用时明确降级，不把仅字幕依据写成已观看全片。
 
-[技能入口](skills/video-summarizer/SKILL.md)只路由模式；[图文流程](skills/video-summarizer/references/illustrated-summary.md)在图文分支加载；[八类入口](skills/video-summarizer/references/article-profiles.md)进一步指向本次所选配置。模板打包在技能assets内，无需依赖源码仓库。当前由宿主Agent执行，不是自动视觉模型流水线。
+[技能入口](skills/video-summarizer/SKILL.md)只路由模式；两种模式写作时均按[共用行文](skills/video-summarizer/references/editorial-writing.md)加载所选类别；[图文流程](skills/video-summarizer/references/illustrated-summary.md)及[视觉模板入口](skills/video-summarizer/references/article-profiles.md)只在图文分支加载。模板打包在技能assets内，无需依赖源码仓库。当前由宿主Agent执行，不是自动视觉模型流水线。
 
 ## 能做什么
 
@@ -93,26 +93,9 @@ node "$HOME/.agents/skills/video-summarizer/scripts/video-source.cjs" --help
 
 YouTube 视频同样可以直接提供链接。你也可以指定输出语言、篇幅或关注点，例如“只关注产品对比”“整理成复习提纲”。
 
-需要仅文字时明确说“仅文字总结，不要图片”。这一分支的输出结构如下；没有原始时间戳时省略章节时间：
+需要仅文字时明确说“仅文字总结，不要图片”。[文字模板](skills/video-summarizer/references/text-summary.md)默认采用原标题、导语、带实际时间的内容章节和自然段落，保留原片的故事、例子、推理与语气；新增AI观点独立放在带归属标记的引用块中，展开具体假设、竞争解释与取舍，给出有理由、有条件的判断。没有原始时间戳时省略章节时间。指定速览、复习提纲或会议纪要时按用途调整。
 
-```markdown
-# 视频标题
-来源：视频链接或转录文件
-依据：字幕文本；覆盖范围及转录质量说明
-
-## 一句话总结
-主题和关键结论
-
-## 章节要点
-### [mm:ss] 章节标题
-- 具体要点、论据和例子
-
-## 关键结论
-- 有依据的结论或行动项
-
-## 不确定与缺口
-仅在存在不确定转录或内容缺失时列出
-```
+可阅读[同一科技视频的新版文字样例](examples/text-summary/summary.md)，对照原有章节清单与图文版的行文效果。此样例只用仓库字幕，不含画面新增信息。
 
 ## B站登录
 
