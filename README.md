@@ -6,6 +6,55 @@
 
 > 官方字幕优先；明确没有可用平台字幕时，Skill 可下载纯音轨并在本机用 whisper.cpp 转录，再继续分块总结。环境齐全自动继续，缺依赖时先披露安装内容，由用户选择安装。默认图文模式由Agent按需取得同版视频、抽帧并实际看图，选用不同内容模板；仅文字模式跳过视觉取材。
 
+## 图文总结效果
+
+这份真实视频样例把 **11 分 16 秒的安卓 Agent 教程**整理成可阅读、可回看的图文文章：沿用原标题，按主题串起操作与原理，配上 **6 张原片截图**及对应时间，新增 AI 评论独立标记。
+
+**《喂饭，让你的安卓手机或平板比Siri更Siri》** · [原视频](https://www.bilibili.com/video/BV1KLhi6oEh5/) · [阅读完整 Markdown](examples/illustrated-summary/summary.md) · [HTML 文件](examples/illustrated-summary/summary.html)
+
+![真实图文总结预览：原标题、主题目录、原片要点、正文与带时间来源的原帧](docs/assets/readme/summary.png)
+
+<details>
+<summary>展开查看 AI 评论的独立呈现</summary>
+
+紫色虚线卡保留“AI 评论 / 非原片观点”的标识，让读者区分原片内容与额外分析。
+
+![图文成品中的 AI 评论卡，明确标记以下是 AI 的看法、非原片观点](docs/assets/readme/commentary.png)
+
+</details>
+
+GitHub README 无法保留完整网页的样式与脚本，因此这里展示浏览器渲染后的截图。HTML 链接在 GitHub 中打开源码；克隆或下载仓库后，用浏览器打开 `examples/illustrated-summary/summary.html` 即可阅读完整排版，保留相邻样式与素材目录。[GitHub 渲染说明](https://github.com/github/markup)
+
+## 多种 HTML 模板
+
+提供 **八类主模板 + 生活体验扩展**，按内容结构选择排版：讲座突出知识递进，访谈保留问答与分歧，实录使用回听索引，影视支持剧透折叠。纯音频讲座或访谈沿用对应结构，并省略无信息的配图。
+
+以下截图来自[可切换的 HTML 模板预览页](examples/illustrated-summary/categories/index.html)，**正文为合成示例、图片为占位**，用于比较风格；上面的图文成品使用真实原片截图。各类 HTML 骨架随 Skill 一起安装，填充时需替换占位符并核对来源。模板由宿主 Agent 选用和编辑。
+
+| 科技数码 · 折腾实验室 | 课程讲座 · 听懂笔记本 |
+| --- | --- |
+| ![科技数码模板：柠檬黄与薄荷绿、网格纸、操作步骤](docs/assets/readme/tech.png) | ![课程讲座模板：暖白与靛蓝、知识递进、复习提纲](docs/assets/readme/lecture.png) |
+| 原理、步骤与实测限制 · [HTML 模板](skills/video-summarizer/assets/article/templates/tech.html) | 概念、推导与例题 · [HTML 模板](skills/video-summarizer/assets/article/templates/lecture.html) |
+
+| 访谈播客 · 长谈会客厅 | 录音实录 · 声音档案夹 |
+| --- | --- |
+| ![访谈播客模板：问答结构与不同说话者的观点对照](docs/assets/readme/interview.png) | ![录音实录模板：议题、发言与回听时间线，不使用图片占位](docs/assets/readme/recording.png) |
+| 追问、分歧与观点修正 · [HTML 模板](skills/video-summarizer/assets/article/templates/interview.html) | 议题、原话与未决项 · [HTML 模板](skills/video-summarizer/assets/article/templates/recording.html) |
+
+| 严肃科普 · 原理观察室 | 知识评论 · 观点拆解台 |
+| --- | --- |
+| ![严肃科普模板：机制解释、观察与证据层次](docs/assets/readme/science.png) | ![知识评论模板：主张、论证、反例与评论归属](docs/assets/readme/analysis.png) |
+| 观察、机制与适用条件 · [HTML 模板](skills/video-summarizer/assets/article/templates/science.html) | 主张、依据与反例 · [HTML 模板](skills/video-summarizer/assets/article/templates/analysis.html) |
+
+| 纪录纪实 · 现场观察簿 | 影视剧情 · 故事放映室 |
+| --- | --- |
+| ![纪录纪实模板：现场叙事、材料来源与不同视角](docs/assets/readme/documentary.png) | ![影视剧情模板：深蓝与暖金、人物冲突、默认收起的剧透区](docs/assets/readme/drama.png) |
+| 现场、人物与时间进程 · [HTML 模板](skills/video-summarizer/assets/article/templates/documentary.html) | 人物、冲突与剧透控制 · [HTML 模板](skills/video-summarizer/assets/article/templates/drama.html) |
+
+**生活体验扩展 · 日常手帐：** 奶油色与草绿，适合有路线、步骤和经验价值的长 Vlog、游记与手作。[HTML 模板](skills/video-summarizer/assets/article/templates/life.html)
+
+下载仓库后，在浏览器中打开 `examples/illustrated-summary/categories/index.html` 可切换八种风格。另有[分类选择与 Markdown 模板说明](examples/illustrated-summary/categories/README.md)及[截图生成方法](docs/assets/readme/README.md)。
+
 ## 默认图文与按需披露
 
 直接请求“总结这个视频”会走图文文章流程；“仅文字/不要图片”走文字文章总结，只加载共用行文规则及所选类别的轻量配置，不加载视觉流程、图片策略或HTML样式。只指定Markdown仍可包含原帧。图文默认HTML阅读版加Markdown，用户指定格式时遵从。
