@@ -9,7 +9,7 @@ const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 let scratch: string
 let skill: string
 const prepare = (profile: string, output: string, media?: string) => spawnSync(process.execPath,
-  [join(skill, 'scripts/prepare-article.mjs'), '--profile', profile, '--out', output,
+  [join(skill, 'scripts/video.mjs'), 'article', '--profile', profile, '--out', output,
     ...(media ? ['--media', media] : [])], { cwd: scratch, encoding: 'utf8' })
 
 beforeAll(async () => {

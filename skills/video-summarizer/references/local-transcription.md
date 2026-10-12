@@ -5,15 +5,15 @@
 先简短说明：“未找到可用平台字幕，将下载这个分P的纯音频，用本机 whisper.cpp 识别后继续总结。自动转录可能有专名、术语和数字错误。”随后检查环境，尚不安装：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" asr doctor
+node "/absolute/skill/scripts/video.mjs" asr doctor
 ```
 
 `ready=true`：自动继续，无需再次选择安装。`ready=false`：此时才读取 [按需安装](asr-installation.md)，向用户展示实际缺项及安装内容，让用户选择安装、提供转录文件或结束。已有本次安装授权时不重复询问。模型损坏不是缺失，先说明检查结果和修复路径，不能覆盖现有模型。
 
-环境就绪后重跑原视频任务，保留原 URL、分P、认证文件、块预算和输出位置，并加上 `--asr local`：
+环境就绪后重跑原视频任务，保留原URL、分P、认证文件和块预算，加上 `--asr local`。输出目录按执行与恢复规则选择，已有失败目录时使用新目录：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" prepare \
+node "/absolute/skill/scripts/video.mjs" prepare \
   --video '原视频完整URL' --asr local --out '/absolute/new-job-directory'
 ```
 
