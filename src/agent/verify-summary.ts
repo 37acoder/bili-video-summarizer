@@ -25,11 +25,47 @@ export async function verifySummary(manifestPath: string, summaryPath: string, c
   const raw = JSON.parse(await readFile(chaptersPath, 'utf8'))
   const chapters = Array.isArray(raw) ? raw : raw.chapters
   if (!Array.isArray(chapters)) throw new Error('INVALID_CHAPTERS')
-  const headings = [...summary.matchAll(/^#{2,3}\s+\[(\d+:\d+(?::\d+)?)\]\s+(.+)$/gm)]
+  const article = !Array.isArray(raw) && raw.mode === 'article'
+  if (!Array.isArray(raw) && raw.mode !== undefined && !['article', 'timeline'].includes(raw.mode)) throw new Error('INVALID_SUMMARY_MODE')
+  const headings = [...summary.matchAll(article ? /^#{2,3}\s+(.+)$/gm : /^#{2,3}\s+\[(\d+:\d+(?::\d+)?)\]\s+(.+)$/gm)]
   const problems: Array<{ chapter?: number; file?: string; reason: string }> = []
   if (summary.split(/\r?\n/)[0] !== '# ' + manifest.title) problems.push({ reason: 'TITLE_MISMATCH' })
   if (!headings.length || headings.length !== chapters.length) problems.push({ reason: 'CHAPTER_COUNT_MISMATCH' })
+  const claimIds = new Set<string>()
+  const chapterIds = new Set<string>()
   for (const [index, heading] of headings.entries()) {
+    const body = summary.slice(heading.index! + heading[0].length, headings[index + 1]?.index ?? summary.length)
+    const depth = heading[0].match(/^#+/)![0].length
+    const section = body.split(new RegExp('^#{1,' + depth + '}\\s+', 'm'))[0] ?? ''
+    if (article) {
+      const chapter = chapters[index]
+      if (!chapter || chapter.heading !== heading[1]!.trim() ||
+        typeof chapter.id !== 'string' || !chapter.id.trim() || chapterIds.has(chapter.id) ||
+        !Array.isArray(chapter.claims) || !chapter.claims.length) {
+        problems.push({ chapter: index + 1, reason: 'CHAPTER_SOURCE_MISMATCH' }); continue
+      }
+      chapterIds.add(chapter.id)
+      // Quote blocks are reserved for separate AI commentary in article Markdown.
+      // A sidecar cannot use a source citation to relabel those comments as source prose.
+      const prose = section.split(/\r?\n/).filter(line => !/^\s*>/.test(line)).join('\n')
+      for (const claim of chapter.claims) {
+        if (!claim || typeof claim.id !== 'string' || !claim.id.trim() || claimIds.has(claim.id) ||
+          typeof claim.text !== 'string' || !claim.text.trim() || !prose.includes(claim.text) ||
+          !Array.isArray(claim.sources) || !claim.sources.length) {
+          problems.push({ chapter: index + 1, reason: 'CLAIM_SOURCE_MISMATCH' }); continue
+        }
+        claimIds.add(claim.id)
+        for (const source of claim.sources) {
+          const item = items.get(source?.sourceItemIndex)
+          if (!item || !Number.isInteger(source.sourceItemIndex) ||
+            typeof source.sourceQuote !== 'string' || !source.sourceQuote.trim() || !item.text.includes(source.sourceQuote) ||
+            (item.s !== undefined ? source.sourceStartSeconds !== item.s : source.sourceStartSeconds !== undefined)) {
+            problems.push({ chapter: index + 1, reason: 'CLAIM_SOURCE_MISMATCH' })
+          }
+        }
+      }
+      continue
+    }
     const chapter = chapters[index], item = items.get(chapter?.sourceItemIndex)
     const seconds = heading[1]!.split(':').reduce((total, n) => total * 60 + Number(n), 0)
     if (!chapter || chapter.heading !== heading[2]!.trim() || !Number.isInteger(chapter.sourceItemIndex) ||
@@ -38,9 +74,6 @@ export async function verifySummary(manifestPath: string, summaryPath: string, c
       Math.floor(chapter.sourceStartSeconds) !== seconds) {
       problems.push({ chapter: index + 1, reason: 'CHAPTER_SOURCE_MISMATCH' }); continue
     }
-    const body = summary.slice(heading.index! + heading[0].length, headings[index + 1]?.index ?? summary.length)
-    const depth = heading[0].match(/^#+/)![0].length
-    const section = body.split(new RegExp('^#{1,' + depth + '}\\s+', 'm'))[0] ?? ''
     // Item ranges in the prose expose late anchors that a valid sidecar quote
     // alone cannot catch. Unreferenced prose still needs semantic review.
     const cited = [...section.matchAll(/\bitems?\s+(\d+)/g)].map(match => items.get(Number(match[1]))?.s).filter((s): s is number => s !== undefined)
@@ -49,6 +82,6 @@ export async function verifySummary(manifestPath: string, summaryPath: string, c
   for (const note of [...notes, { file: summaryPath, text: summary }]) {
     if (/应为|正确是/.test(note.text)) problems.push({ file: note.file, reason: 'CORRECTION_REQUIRES_REVIEW' })
   }
-  return { valid: problems.length === 0, chapterCount: headings.length, problems,
-    limitation: 'Source identity and chronology checks do not establish semantic support or transcription accuracy' }
+  return { valid: problems.length === 0, mode: article ? 'article' : 'timeline', chapterCount: headings.length, problems,
+    limitation: 'Source identity, text binding and chronology checks do not establish semantic support, complete claim coverage or transcription accuracy' }
 }

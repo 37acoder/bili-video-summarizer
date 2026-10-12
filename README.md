@@ -93,7 +93,7 @@ node "$HOME/.agents/skills/video-summarizer/scripts/video-source.cjs" --help
 
 YouTube 视频同样可以直接提供链接。你也可以指定输出语言、篇幅或关注点，例如“只关注产品对比”“整理成复习提纲”。
 
-需要仅文字时明确说“仅文字总结，不要图片”。[文字模板](skills/video-summarizer/references/text-summary.md)默认采用原标题、导语、带实际时间的内容章节和自然段落，保留原片的故事、例子、推理与语气；新增AI观点独立放在带归属标记的引用块中，展开具体假设、竞争解释与取舍，给出有理由、有条件的判断。没有原始时间戳时省略章节时间。指定速览、复习提纲或会议纪要时按用途调整。
+需要仅文字时明确说“仅文字总结，不要图片”。[文字模板](skills/video-summarizer/references/text-summary.md)默认写成文章，沿用原标题，用具体问题、经历和推理展开正文；小标题写实际内容，来源、时间与回看入口收在文末。新增AI观点独立放在带归属标记的引用块中，分析具体假设、竞争解释与取舍，给出有理由、有条件的判断。音频访谈也可采用文章写法；指定速览、复习提纲、会议纪要或逐段复盘时按用途调整。
 
 可阅读[同一科技视频的新版文字样例](examples/text-summary/summary.md)，对照原有章节清单与图文版的行文效果。此样例只用仓库字幕，不含画面新增信息。
 
@@ -107,14 +107,14 @@ YouTube 视频同样可以直接提供链接。你也可以指定输出语言、
 SKILL_DIR="$HOME/.agents/skills/video-summarizer"
 LOGIN_DIR="$(mktemp -d)/bilibili-login"
 
-node "$SKILL_DIR/scripts/video-source.cjs" auth login --out "$LOGIN_DIR"
+node "$SKILL_DIR/scripts/video.mjs" auth login --out "$LOGIN_DIR"
 ```
 
 打开命令输出的 `qrFile`（即 `$LOGIN_DIR/login.png`），用 B站手机客户端扫码并确认。Agent 也可以将这张本地二维码展示给你。随后运行：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" auth poll --state "$LOGIN_DIR/login.json" --wait
-node "$SKILL_DIR/scripts/video-source.cjs" auth status
+node "$SKILL_DIR/scripts/video.mjs" auth poll --state "$LOGIN_DIR/login.json" --wait
+node "$SKILL_DIR/scripts/video.mjs" auth status
 ```
 
 `--wait` 最多等待约 180 秒。返回 `authenticated: true` 表示验证成功并已保存凭据；二维码过期时，重新生成一份即可。上述变量和命令请在同一个终端中运行。
@@ -131,8 +131,8 @@ node "$SKILL_DIR/scripts/video-source.cjs" auth status
 ```sh
 SKILL_DIR="$HOME/.agents/skills/video-summarizer"
 chmod 600 /绝对路径/private-cookie.txt
-node "$SKILL_DIR/scripts/video-source.cjs" auth import --file /绝对路径/private-cookie.txt
-node "$SKILL_DIR/scripts/video-source.cjs" auth status
+node "$SKILL_DIR/scripts/video.mjs" auth import --file /绝对路径/private-cookie.txt
+node "$SKILL_DIR/scripts/video.mjs" auth status
 ```
 
 也支持完整 Cookie 请求头、浏览器导出的 Cookie JSON 和 Netscape `cookies.txt`。不要将 Cookie 粘贴到聊天、提交到 Git，或直接放进命令行参数中。
@@ -159,18 +159,18 @@ node "$SKILL_DIR/scripts/video-source.cjs" auth status
 SKILL_DIR="$HOME/.agents/skills/video-summarizer"
 JOB_DIR="$(mktemp -d)/video-summary"
 
-node "$SKILL_DIR/scripts/video-source.cjs" prepare \
+node "$SKILL_DIR/scripts/video.mjs" prepare \
   --video 'https://www.bilibili.com/video/BV1KLhi6oEh5/' \
   --out "$JOB_DIR"
 
-node "$SKILL_DIR/scripts/video-source.cjs" inspect \
+node "$SKILL_DIR/scripts/video.mjs" inspect \
   --manifest "$JOB_DIR/manifest.json"
 ```
 
 处理本地转录时，将 `prepare` 命令替换为：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" prepare \
+node "$SKILL_DIR/scripts/video.mjs" prepare \
   --transcript '/绝对路径/transcript.txt' \
   --title '视频标题' \
   --out "$JOB_DIR"
@@ -207,10 +207,10 @@ node "$SKILL_DIR/scripts/video-source.cjs" prepare \
 首次使用仅检查 Node 和脚本，仍先走字幕流程。确认无可用平台字幕后，Skill 说明将下载音频并在本机识别，然后运行 `asr doctor`。工具和模型齐全就继续；缺项才展示缺失工具、模型大小、安装位置和方式，由用户选择安装或提供文稿/结束。
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" asr doctor
+node "$SKILL_DIR/scripts/video.mjs" asr doctor
 # 了解安装内容并选择安装后，显式执行；prepare 和库 API 不会安装
-node "$SKILL_DIR/scripts/video-source.cjs" asr setup
-node "$SKILL_DIR/scripts/video-source.cjs" prepare \
+node "$SKILL_DIR/scripts/video.mjs" asr setup
+node "$SKILL_DIR/scripts/video.mjs" prepare \
   --video 'https://www.bilibili.com/video/BV12ftJ6rEkw/' \
   --asr local --out '/absolute/new-job-directory'
 ```
@@ -223,7 +223,7 @@ macOS 使用已有 Homebrew，只补齐缺失的 `yt-dlp`、`ffmpeg`（含 ffpro
 
 平台返回 CAPTIONS_INVALID 时可显式 --caption-retries 3，在同一前台进程最多重试三次；HTTP、鉴权、解析和取消不重试，也不将异常当作无字幕。输出目录已有内容时保留并换新目录。章节按最早要点定位，转录纠错的语境猜测必须标为未核实。
 
-总结后执行 `verify-summary --manifest <manifest.json> --summary <summary.md> --chapters <chapters.json>`，校验原标题、章节引文、起点与正文 item 引用，以及待核对的确定纠错措辞。返回 valid=true 后仍须有界核对语义支持，程序校验不证明转录准确。
+总结后执行 `verify-summary --manifest <manifest.json> --summary <summary.md> --chapters <chapters.json>`。默认文章采用 `mode: "article"` 的来源记录，校验原标题、普通章节标题、段落与来源绑定、item引文及实际秒数；原来的时间标题模式仍用于逐段复盘。两种模式都检查待核对的确定纠错措辞。返回 valid=true 后仍须审读语义支持、重要主张覆盖和后续更正，程序校验不证明转录准确。格式见[文字证据流程](skills/video-summarizer/references/summarization.md)。
 
 CLI 只准备素材；总结仍按现有分块流程由 Agent 生成，标明本地自动转录及疑点。HTTP、鉴权、解析和字幕身份校验失败不会触发 ASR；空识别结果不会生成成功任务。B站的字幕接口可能返回与目标不符的字幕，应修复或稍后重试，不能强行当作无字幕。YouTube 空列表仅表明 savesubs 当前未提供可用字幕。
 
@@ -231,7 +231,7 @@ CLI 只准备素材；总结仍按现有分块流程由 Agent 生成，标明本
 
 无平台字幕时，用户可选择豆包作为另一种转录方案。开通火山引擎**流式语音识别2.0**，将语音 API KEY 存入本机私有的 `~/.config/video-summarizer/doubao.json`（`{"api_key":"实际密钥"}`，权限0600），即可让 Agent 使用豆包转录并继续总结。配置 key 本身不会触发上传，已有平台字幕与本地转录流程仍可使用。
 
-技能自带 `scripts/doubao-transcribe.py`，提供 `doctor/download/prepare/inspect`。除文字外，完整保存句/词时间戳、说话人、情绪、声音性别估计、语速、音量和语种，并按文本分块提供附加信息；情绪和身份相关字段只作为模型估计的辅助依据。成功结果按音频和参数缓存，失败会话不会自动重复上传。
+技能运行脚本统一使用JavaScript，通过 `scripts/video.mjs doubao` 调用 `doctor/download/prepare/inspect`，无需Python或额外安装npm依赖。除文字外，完整保存句/词时间戳、说话人、情绪、声音性别估计、语速、音量和语种，并按文本分块提供附加信息；情绪和身份相关字段只作为模型估计的辅助依据。成功结果按音频和参数缓存，兼容此前Python版本的缓存，失败会话不会自动重复上传。
 
 环境、命令、信息使用和恢复规则见 [豆包独立说明](skills/video-summarizer/references/doubao-transcription.md)，验证见 [技能接入验收](docs/validation/doubao-skill-integration.md)。这是技能的可选流式入口，库 API 与录音文件 AUC 批处理尚未接入豆包。
 

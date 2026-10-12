@@ -26,12 +26,12 @@ async function run() {
   html = html.replaceAll('href="../base.css"', 'href="base.css"').replaceAll('href="../themes.css"', 'href="themes.css"')
   if (media === 'audio' && profile.mediaMode !== 'audio') {
     // A transformation of our fixed skeleton, not a general Markdown/HTML parser.
-    const htmlIndex = '<section class="audio-index" data-origin="source"><h2>回听索引</h2><p class="audio-note">{{可靠时间与已确认身份_缺失时明确标注}}</p><ol class="audio-timeline"><li><span class="audio-time">{{实际时间_不明则用议题索引}}</span><div><b>{{议题或已确认说话者}}</b><p>{{该段原片内容_保留归属}}</p></div></li></ol></section>'
+    const htmlIndex = '<details class="sources"><summary>回听索引</summary><section class="audio-index" data-origin="source"><h2>回听索引</h2><p class="audio-note">{{可靠时间与已确认身份_缺失时明确标注}}</p><ol class="audio-timeline"><li><span class="audio-time">{{实际时间_不明则用议题索引}}</span><div><b>{{议题或已确认说话者}}</b><p>{{该段原片内容_保留归属}}</p></div></li></ol></section></details>'
     html = html.replace(/<figure class="shot">[\s\S]*?<\/figure>/, htmlIndex)
     const imageStart = md.indexOf('![{{实际可见内容}}]')
     const imageEnd = md.indexOf('\n\n> **✦', imageStart)
     if (imageStart < 0 || imageEnd < 0) throw Error('Template image block not found')
-    md = md.slice(0, imageStart) + '## 回听索引\n\n{{可靠时间_议题或已确认说话者_该段内容_缺失时明确标注}}' + md.slice(imageEnd)
+    md = md.slice(0, imageStart) + '<details>\n<summary>回听索引</summary>\n\n{{可靠时间_议题或已确认说话者_该段内容_缺失时明确标注}}\n\n</details>' + md.slice(imageEnd)
   }
   const output = resolve(options['--out'])
   await mkdir(output) // Fails if it exists; never merges old article state.

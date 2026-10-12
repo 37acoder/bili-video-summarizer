@@ -1,5 +1,5 @@
 {
-  "version": "category-v2",
+  "version": "category-v3",
   "id": "lecture",
   "label": "课程讲座",
   "voice": "沿着讲者的提问、定义、推导、例子和问答前进。概念首次出现要解释，保留前置知识、论证中间环节及讲者的更正；不改写成散碎金句。",

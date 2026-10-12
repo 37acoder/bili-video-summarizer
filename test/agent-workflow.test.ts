@@ -86,7 +86,7 @@ describe('Agent source workflows (no LLM)', () => {
 
   it('runs packaged CLI outside the repo without API keys or node_modules, blocks description-only input', async () => {
     const dir = await temp()
-    const script = join(process.cwd(), 'skills/video-summarizer/scripts/video-source.cjs')
+    const script = join(process.cwd(), 'skills/video-summarizer/scripts/video.mjs')
     const input = join(process.cwd(), 'examples/samples/BV1KLhi6oEh5.input.txt')
     const result = await run(process.execPath, [script, 'prepare', '--transcript', input, '--out', join(dir, 'out'), '--chunk-tokens', '128'], {
       cwd: dir, env: { PATH: process.env.PATH },
@@ -175,5 +175,49 @@ globalThis.fetch=async url=>{
     await writeFile(reduction, '原文可能有误，未核实')
     await writeFile(summary, '# 测试\n### [00:49] 主题\n- 原文应为猜测（item 0）\n')
     await expect(run(process.execPath, args)).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('CORRECTION_REQUIRES_REVIEW') })
+  })
+
+  it('verifies reordered article paragraphs without public timestamps and rejects broken evidence or AI relabeling', async () => {
+    const dir = await temp(), script = join(process.cwd(), 'skills/video-summarizer/scripts/video.mjs')
+    const input = join(dir, 'input.txt')
+    await writeFile(input, '[00:49] 想去公司上班\n[01:55] 真去也可能嫌枯燥\n' + '上下文'.repeat(50))
+    const output = join(dir, 'article')
+    await run(process.execPath, [script, 'prepare', '--transcript', input, '--title', '原片标题', '--out', output])
+    const summary = join(output, 'summary.md'), chapters = join(output, 'chapters.json')
+    await writeFile(summary, '# 原片标题\n\n## 去了也未必喜欢\n\n真去也可能嫌枯燥。\n\n> **AI观点 · 非原片内容**\n>\n> 退出代价也影响体验。\n\n## 为什么想去\n\n想去公司上班。\n')
+    const evidence = { mode: 'article', chapters: [
+      { id: 'later', heading: '去了也未必喜欢', claims: [{ id: 'p1', text: '真去也可能嫌枯燥。', sources: [{ sourceItemIndex: 1, sourceStartSeconds: 115, sourceQuote: '真去也可能嫌枯燥' }] }] },
+      { id: 'earlier', heading: '为什么想去', claims: [{ id: 'p2', text: '想去公司上班。', sources: [{ sourceItemIndex: 0, sourceStartSeconds: 49, sourceQuote: '想去公司上班' }] }] },
+    ] }
+    const args = [script, 'verify-summary', '--manifest', join(output, 'manifest.json'), '--summary', summary, '--chapters', chapters]
+    await writeFile(chapters, JSON.stringify(evidence))
+    expect(JSON.parse((await run(process.execPath, args)).stdout)).toMatchObject({ valid: true, mode: 'article', chapterCount: 2 })
+    for (const patch of [
+      { text: '原稿不存在的段落' }, { text: '退出代价也影响体验。' },
+      { sources: [{ sourceItemIndex: 99, sourceStartSeconds: 115, sourceQuote: '真去也可能嫌枯燥' }] },
+      { sources: [{ sourceItemIndex: 1, sourceStartSeconds: 116, sourceQuote: '真去也可能嫌枯燥' }] },
+      { sources: [{ sourceItemIndex: 1, sourceStartSeconds: 115, sourceQuote: '编造引文' }] },
+    ]) {
+      const broken = structuredClone(evidence)
+      Object.assign(broken.chapters[0]!.claims[0]!, patch)
+      await writeFile(chapters, JSON.stringify(broken))
+      await expect(run(process.execPath, args)).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('CLAIM_SOURCE_MISMATCH') })
+    }
+  })
+
+  it('verifies an untimed article using source items without fabricated seconds', async () => {
+    const dir = await temp(), script = join(process.cwd(), 'skills/video-summarizer/scripts/video.mjs')
+    const input = join(dir, 'input.txt'); await writeFile(input, '没有时间的文稿。' + '背景内容'.repeat(50))
+    const output = join(dir, 'untimed')
+    await run(process.execPath, [script, 'prepare', '--transcript', input, '--title', '无时间原稿', '--out', output])
+    const summary = join(output, 'summary.md'), chapters = join(output, 'chapters.json')
+    await writeFile(summary, '# 无时间原稿\n\n## 一个问题\n\n没有时间的文稿。\n')
+    const evidence = { mode: 'article', chapters: [{ id: 'one', heading: '一个问题', claims: [{ id: 'p1', text: '没有时间的文稿。', sources: [{ sourceItemIndex: 0, sourceQuote: '没有时间的文稿。' }] }] }] }
+    await writeFile(chapters, JSON.stringify(evidence))
+    const args = [script, 'verify-summary', '--manifest', join(output, 'manifest.json'), '--summary', summary, '--chapters', chapters]
+    expect(JSON.parse((await run(process.execPath, args)).stdout).valid).toBe(true)
+    Object.assign(evidence.chapters[0]!.claims[0]!.sources[0]!, { sourceStartSeconds: 0 })
+    await writeFile(chapters, JSON.stringify(evidence))
+    await expect(run(process.execPath, args)).rejects.toMatchObject({ code: 1, stdout: expect.stringContaining('CLAIM_SOURCE_MISMATCH') })
   })
 })
