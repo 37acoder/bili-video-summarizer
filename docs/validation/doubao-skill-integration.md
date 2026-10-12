@@ -49,3 +49,13 @@
 用户随后明确要求合并到 main。以 origin/main 的 `45ba4c7` 为基线，在隔离的 `codex/doubao-asr-main` 分支整合；SKILL.md 与 setup.md 的两处冲突按主线现有图文、本地转录和执行恢复流程保留，再添加豆包选项及丰富信息分页规则。README 增加豆包入口，构建检查包含独立说明并打包 helper。
 
 整合后 `npm run build:skill`、`npm run typecheck`、`npm test`（12个文件、91项）、`npm run test:doubao`（4条本地集成流程）、quick_validate 与文档链接校验通过。通过整合后打包技能再回放真实180秒结果：15个块、10个句段、784条词记录保持对应，未新增云调用。主目录中其他未提交改动不参与本次提交。
+
+## JavaScript迁移与统一入口
+
+技能运行时现统一使用Node.js >=22。`scripts/video.mjs`按自身位置定位打包脚本：字幕与本地转录直接调用，豆包使用doubao子命令，模板展开使用article子命令。env离线检查Node版本及发布脚本，返回入口与技能目录的绝对路径；无需设置SKILL_DIR或切换工作目录，ASR检查仍按分支进行。SKILL.md开头改为能力简介，命令与路径说明放在底部。
+
+豆包客户端迁到JavaScript并打包为doubao-transcribe.cjs，WebSocket使用 [ws](https://github.com/websockets/ws/blob/master/doc/ws.md)，依赖随包发布，无需Python、aiohttp、certifi或npm安装。保留请求参数、原始词与扩展信息、分块对应、终态验证、私有文件写入、阶段锁、失败记录、显式重试和完成缓存。缓存键沿用Python版的规范化序列化，固定旧版夹具验证可无密钥离线复用；旧Python运行脚本与测试由JavaScript实现替代。历史研究脚本不参与技能运行。
+
+7条豆包集成流程覆盖本机二进制传输、丰富信息导出、跨目录打包运行、离线导入、旧缓存复用、403拒绝、缺失终态、取消及分P不明的下载拒绝。模拟传输使用合成音频和临时假凭据，未发起真实云端请求。迁移后的真实服务识别结果、准确率和耗时尚未复测；此前真实试验记录仍属于Python版本。
+
+迁移后全量测试13个文件、99项通过，类型检查、库构建、技能构建与技能结构校验通过。统一入口的字幕与模板流程继续以现有集成测试核验，文档示例均改用统一入口。

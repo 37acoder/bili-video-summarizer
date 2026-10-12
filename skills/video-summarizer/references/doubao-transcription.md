@@ -4,34 +4,27 @@
 
 平台字幕仍是首选。确认没有平台字幕，且用户选择豆包转录或已设定云端转录偏好时，执行本方案；用户直接提供音频并要求豆包转录时也可使用。只有 API key 存在不能视为上传音频的选择。HTTP、鉴权、解析或字幕身份错误不是“无字幕”；先处理实际错误，不切换 ASR 掩盖问题。新版字幕 CLI 用 `NO_TRANSCRIPT` 且 `reason=captions_absent` 表示明确缺字幕；旧版本只返回 `NO_TRANSCRIPT` 时须核实原因。
 
-本入口是独立的 `scripts/doubao-transcribe.py`，与现有平台字幕、本地转录并存，不改变库 API 的 `fetchTranscript()`。一次流式会话请求最终文字、句级/词级时间戳、说话人及语音附加信息，然后转成现有 prepare/inspect/Map-Reduce 可读的任务。已选图文模式继续融合实际读取的原帧；仅文字模式继续文字写作。
+从统一入口的doubao命令进入，与平台字幕、本地转录并存，不改变库API的 `fetchTranscript()`。一次流式会话请求最终文字、句级/词级时间戳、说话人及语音附加信息，再转成prepare/inspect/Map-Reduce可读的任务。图文模式继续融合实际读取的原帧，文字模式继续文字写作。
 
 ## 一次配置
 
 1. 在火山引擎同一项目开通**流式语音识别 2.0**，创建有对应权限的语音 API key。此入口资源为 `volc.seedasr.sauc.duration`，不是录音文件识别服务。仅创建 key 不代表服务已开通；服务条款、免费额度和后付费按账户的实际状态处理。脚本不会自动开通服务或创建密钥。
 2. 将真实 key 存在本机私有文件 `~/.config/video-summarizer/doubao.json`，格式为 `{"api_key":"实际密钥"}`；目录权限 0700，文件权限 0600。也支持已有同格式文件，通过 `--credential-file '/absolute/private-config.json'` 指定。环境变量 `DOUBAO_ASR_API_KEY` 优先于文件。不要把 key 放进仓库、聊天、日志或命令行参数；key 的名称和界面掩码不能代替真实值。
-3. Python >=3.9；未缓存的 API 调用需要 `aiohttp`、`certifi`。Node.js >=22 和技能自带的 `video-source.cjs` 用于分块。已符合 16kHz、单声道、16-bit PCM WAV 的音频不需要 FFmpeg；其他格式按需检查 FFmpeg。下载音频另需 `yt-dlp`、`ffprobe`，B站还需现有登录凭据。无需 Whisper 模型、额外 LLM key、对象存储或 SDK zip。
+3. Node.js >=22，豆包客户端与分块脚本均随技能打包，无需Python或额外安装npm依赖。已符合16kHz、单声道、16-bit PCM WAV的音频无需FFmpeg，其他格式按需检查FFmpeg。下载音频另需 `yt-dlp`、`ffprobe`，B站还需现有登录凭据。无需Whisper模型、额外LLM key、对象存储或SDK zip。
 
 ```sh
-python3 "$SKILL_DIR/scripts/doubao-transcribe.py" doctor
+node "/absolute/skill/scripts/video.mjs" doubao doctor
 # 使用已有私有配置时，doctor/prepare 都传相同的 --credential-file
 ```
 
-doctor 不联网，也不验证账户开通状态。缺少 Python 依赖时可使用专用虚拟环境，之后命令改用该环境的 Python：
-
-```sh
-python3 -m venv "$HOME/.venvs/video-summarizer-doubao"
-"$HOME/.venvs/video-summarizer-doubao/bin/python" -m pip install aiohttp certifi
-```
-
-依赖安装按已有授权和环境管理规则执行，首次使用平台字幕不安装这些可选依赖。
+doctor只检查本机密钥配置，不联网，也不验证账户开通状态。媒体工具按实际输入检查；依赖安装沿用已有授权和环境管理规则，平台字幕流程无需提前准备这些工具。
 
 ## 下载、转录、继续总结
 
 已有可信、对应视频及分P的音频时直接复用。需要下载时：
 
 ```sh
-python3 "$SKILL_DIR/scripts/doubao-transcribe.py" download \
+node "/absolute/skill/scripts/video.mjs" doubao download \
   --video 'https://www.bilibili.com/video/BVxxxxxxxxxx/?p=2' \
   --out '/absolute/new-audio-directory'
 ```
@@ -41,20 +34,20 @@ python3 "$SKILL_DIR/scripts/doubao-transcribe.py" download \
 用下载输出中的实际路径、原标题及身份调用；标题逐字保留，不用测试标题或自行概括替换：
 
 ```sh
-python3 "$SKILL_DIR/scripts/doubao-transcribe.py" prepare \
+node "/absolute/skill/scripts/video.mjs" doubao prepare \
   --audio '/absolute/audio-directory/audio.m4a' \
   --source bilibili --video-id 'BVxxxxxxxxxx' --page 2 \
   --title '视频原标题' --out '/absolute/new-summary-job'
 # YouTube 改为 --source youtube，传真实 11 位 ID，--page 1
-node "$SKILL_DIR/scripts/video-source.cjs" inspect \
+node "/absolute/skill/scripts/video.mjs" inspect \
   --manifest '/absolute/new-summary-job/manifest.json'
-python3 "$SKILL_DIR/scripts/doubao-transcribe.py" inspect \
+node "/absolute/skill/scripts/video.mjs" doubao inspect \
   --job '/absolute/new-summary-job' --chunk 0001 --offset 0 --limit 10
 ```
 
 `--out` 必须是新目录且父目录存在；默认文本块预算约 3000 token，可用 `--chunk-tokens` 调整。脚本在自己的临时文件中规范音频，保留原输入；校验终态、非空文字、确定句段及时间范围后才导出任务。只有命令成功且 `asr/complete.json` 存在才算完整的豆包任务，失败后留下的目录不作为完成结果。来源/标题由调用方传入，脚本不从 ASR 推测视频身份。短片段只总结实际覆盖区间，不能宣称覆盖整段视频；裁剪后时间戳从片段起点计时，映射原视频须记录并加回实际裁剪偏移。
 
-首次 API 请求上传音频至火山引擎。端点为 `wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async`，鉴权头为 `X-Api-Key`、`X-Api-Resource-Id`、`X-Api-Request-Id`。固定 200ms 实时发送，开启 `enable_nonstream` 内部二遍识别；默认语言自动识别，可按需指定 `--language zh-CN`。这不是整文件高速批处理：180秒试验会话约182秒。长视频可另行评估录音文件识别 AUC；其开通、音频 URL 和请求接口不同，当前 helper 未实现。helper 自设单次音频上限5小时，不代表供应商所有接口的时长上限。
+首次API请求上传音频至火山引擎。端点为 `wss://openspeech.bytedance.com/api/v3/sauc/bigmodel_async`，鉴权头为 `X-Api-Key`、`X-Api-Resource-Id`、`X-Api-Request-Id`。按200ms实时发送，开启 `enable_nonstream` 内部二遍识别；默认自动识别语言，可指定 `--language zh-CN`。此前Python版本的180秒试验会话约182秒，新JavaScript版本尚未复测真实云端耗时。长视频可另行评估录音文件识别AUC，其开通、音频URL和接口不同，当前未实现。客户端自设单次音频上限5小时，不代表供应商所有接口的时长上限。
 
 ## 信息如何保存与使用
 

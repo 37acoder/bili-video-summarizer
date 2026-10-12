@@ -107,14 +107,14 @@ YouTube 视频同样可以直接提供链接。你也可以指定输出语言、
 SKILL_DIR="$HOME/.agents/skills/video-summarizer"
 LOGIN_DIR="$(mktemp -d)/bilibili-login"
 
-node "$SKILL_DIR/scripts/video-source.cjs" auth login --out "$LOGIN_DIR"
+node "$SKILL_DIR/scripts/video.mjs" auth login --out "$LOGIN_DIR"
 ```
 
 打开命令输出的 `qrFile`（即 `$LOGIN_DIR/login.png`），用 B站手机客户端扫码并确认。Agent 也可以将这张本地二维码展示给你。随后运行：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" auth poll --state "$LOGIN_DIR/login.json" --wait
-node "$SKILL_DIR/scripts/video-source.cjs" auth status
+node "$SKILL_DIR/scripts/video.mjs" auth poll --state "$LOGIN_DIR/login.json" --wait
+node "$SKILL_DIR/scripts/video.mjs" auth status
 ```
 
 `--wait` 最多等待约 180 秒。返回 `authenticated: true` 表示验证成功并已保存凭据；二维码过期时，重新生成一份即可。上述变量和命令请在同一个终端中运行。
@@ -131,8 +131,8 @@ node "$SKILL_DIR/scripts/video-source.cjs" auth status
 ```sh
 SKILL_DIR="$HOME/.agents/skills/video-summarizer"
 chmod 600 /绝对路径/private-cookie.txt
-node "$SKILL_DIR/scripts/video-source.cjs" auth import --file /绝对路径/private-cookie.txt
-node "$SKILL_DIR/scripts/video-source.cjs" auth status
+node "$SKILL_DIR/scripts/video.mjs" auth import --file /绝对路径/private-cookie.txt
+node "$SKILL_DIR/scripts/video.mjs" auth status
 ```
 
 也支持完整 Cookie 请求头、浏览器导出的 Cookie JSON 和 Netscape `cookies.txt`。不要将 Cookie 粘贴到聊天、提交到 Git，或直接放进命令行参数中。
@@ -159,18 +159,18 @@ node "$SKILL_DIR/scripts/video-source.cjs" auth status
 SKILL_DIR="$HOME/.agents/skills/video-summarizer"
 JOB_DIR="$(mktemp -d)/video-summary"
 
-node "$SKILL_DIR/scripts/video-source.cjs" prepare \
+node "$SKILL_DIR/scripts/video.mjs" prepare \
   --video 'https://www.bilibili.com/video/BV1KLhi6oEh5/' \
   --out "$JOB_DIR"
 
-node "$SKILL_DIR/scripts/video-source.cjs" inspect \
+node "$SKILL_DIR/scripts/video.mjs" inspect \
   --manifest "$JOB_DIR/manifest.json"
 ```
 
 处理本地转录时，将 `prepare` 命令替换为：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" prepare \
+node "$SKILL_DIR/scripts/video.mjs" prepare \
   --transcript '/绝对路径/transcript.txt' \
   --title '视频标题' \
   --out "$JOB_DIR"
@@ -207,10 +207,10 @@ node "$SKILL_DIR/scripts/video-source.cjs" prepare \
 首次使用仅检查 Node 和脚本，仍先走字幕流程。确认无可用平台字幕后，Skill 说明将下载音频并在本机识别，然后运行 `asr doctor`。工具和模型齐全就继续；缺项才展示缺失工具、模型大小、安装位置和方式，由用户选择安装或提供文稿/结束。
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" asr doctor
+node "$SKILL_DIR/scripts/video.mjs" asr doctor
 # 了解安装内容并选择安装后，显式执行；prepare 和库 API 不会安装
-node "$SKILL_DIR/scripts/video-source.cjs" asr setup
-node "$SKILL_DIR/scripts/video-source.cjs" prepare \
+node "$SKILL_DIR/scripts/video.mjs" asr setup
+node "$SKILL_DIR/scripts/video.mjs" prepare \
   --video 'https://www.bilibili.com/video/BV12ftJ6rEkw/' \
   --asr local --out '/absolute/new-job-directory'
 ```
@@ -231,7 +231,7 @@ CLI 只准备素材；总结仍按现有分块流程由 Agent 生成，标明本
 
 无平台字幕时，用户可选择豆包作为另一种转录方案。开通火山引擎**流式语音识别2.0**，将语音 API KEY 存入本机私有的 `~/.config/video-summarizer/doubao.json`（`{"api_key":"实际密钥"}`，权限0600），即可让 Agent 使用豆包转录并继续总结。配置 key 本身不会触发上传，已有平台字幕与本地转录流程仍可使用。
 
-技能自带 `scripts/doubao-transcribe.py`，提供 `doctor/download/prepare/inspect`。除文字外，完整保存句/词时间戳、说话人、情绪、声音性别估计、语速、音量和语种，并按文本分块提供附加信息；情绪和身份相关字段只作为模型估计的辅助依据。成功结果按音频和参数缓存，失败会话不会自动重复上传。
+技能运行脚本统一使用JavaScript，通过 `scripts/video.mjs doubao` 调用 `doctor/download/prepare/inspect`，无需Python或额外安装npm依赖。除文字外，完整保存句/词时间戳、说话人、情绪、声音性别估计、语速、音量和语种，并按文本分块提供附加信息；情绪和身份相关字段只作为模型估计的辅助依据。成功结果按音频和参数缓存，兼容此前Python版本的缓存，失败会话不会自动重复上传。
 
 环境、命令、信息使用和恢复规则见 [豆包独立说明](skills/video-summarizer/references/doubao-transcription.md)，验证见 [技能接入验收](docs/validation/doubao-skill-integration.md)。这是技能的可选流式入口，库 API 与录音文件 AUC 批处理尚未接入豆包。
 

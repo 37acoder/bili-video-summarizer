@@ -7,8 +7,8 @@
 用户选择安装后，运行与 doctor 同样配置的命令：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" asr setup
-node "$SKILL_DIR/scripts/video-source.cjs" asr doctor
+node "/absolute/skill/scripts/video.mjs" asr setup
+node "/absolute/skill/scripts/video.mjs" asr doctor
 ```
 
 setup 只补缺项，不执行升级。工具从 PATH 或显式路径发现；FFmpeg 与 ffprobe 属于同一个包。macOS 缺工具时使用已有 Homebrew，按需运行 `brew install yt-dlp ffmpeg whisper.cpp` 的缺项子集。正式包名为 `whisper.cpp`，不是旧的 `whisper-cpp`。没有 Homebrew 时脚本停止并给出手动准备提示，不能自动安装包管理器；用户可自行按 [Homebrew 官方说明](https://brew.sh/) 准备，或给已有工具的路径。
@@ -26,7 +26,7 @@ setup 只补缺项，不执行升级。工具从 PATH 或显式路径发现；FF
 Linux / Windows 第一版支持已有工具的手动配置，未做真实端到端验证。按各工具官方说明准备 yt-dlp、FFmpeg/ffprobe、whisper-cli 和多语言 GGML 模型，确认可执行后运行：
 
 ```sh
-node "$SKILL_DIR/scripts/video-source.cjs" asr doctor \
+node "/absolute/skill/scripts/video.mjs" asr doctor \
   --yt-dlp '/absolute/yt-dlp' --ffmpeg '/absolute/ffmpeg' \
   --ffprobe '/absolute/ffprobe' --whisper-cli '/absolute/whisper-cli' \
   --model-path '/absolute/model.bin'

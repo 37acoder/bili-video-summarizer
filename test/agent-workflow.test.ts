@@ -86,7 +86,7 @@ describe('Agent source workflows (no LLM)', () => {
 
   it('runs packaged CLI outside the repo without API keys or node_modules, blocks description-only input', async () => {
     const dir = await temp()
-    const script = join(process.cwd(), 'skills/video-summarizer/scripts/video-source.cjs')
+    const script = join(process.cwd(), 'skills/video-summarizer/scripts/video.mjs')
     const input = join(process.cwd(), 'examples/samples/BV1KLhi6oEh5.input.txt')
     const result = await run(process.execPath, [script, 'prepare', '--transcript', input, '--out', join(dir, 'out'), '--chunk-tokens', '128'], {
       cwd: dir, env: { PATH: process.env.PATH },
